@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	// "go/build"
 	"image"
 	"image/draw"
-	_ "image/png" // fixes "image: unknown format" error
+	// _ "image/png" // fixes "image: unknown format" error
 	"log"
 	"os"
 	"path/filepath"
@@ -18,7 +17,8 @@ import (
 )
 
 const (
-	windowWidth  = 1280
+	// windowWidth  = 1280
+	windowWidth  = 720
 	windowHeight = 720
 	windowTitle  = "Title"
 
@@ -27,7 +27,26 @@ const (
 
 	STRIDE_SIZE = 3 // should be 5 for x,y,z,u,v coord system
 	FLOAT_SIZE  = 4
+
+	COLOR_CLEAR_R = 0.28627450980392155
+	COLOR_CLEAR_G = 0.8705882352941177
+	COLOR_CLEAR_B = 0.8509803921568627
+	COLOR_CLEAR_A = 1.0
 )
+
+var ORIGIN = mgl32.Vec3{0.0, 0.0, 0.0}
+var SIZE_STANDARD = mgl32.Vec2{1.0, 1.0}
+
+type ShaderConfig struct {
+	vert             uint32
+	vertTextureCoord uint32
+}
+
+type DrawableEntity struct {
+	position mgl32.Vec3
+	size     mgl32.Vec2
+	vao      uint32
+}
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -43,115 +62,65 @@ func main() {
 		panic(err)
 	}
 
-	gl.UseProgram(program) // i also call in loop
+	gl.UseProgram(program)
 
-	// set up vertex shader stuff
-	// projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
-	// arg1 seems to affect both Y angle *and* distance from cube
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
-	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+	_, _ = initCamera(program)
 
-	// positive numbers in center causes cube to move {left, down, right}
-	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 1}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0}) // camera position, center, "up" (seems like rotation)
-	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-
-	// model matrix transforms our vertex coordinates from Model Space (centered about object center) to World Space (centered about global 0,0,0 coordinates)
-	// model := mgl32.Ident4()
-
-	// positive numbers causes cube to move {right, up, towards cube}
-	model := mgl32.Translate3D(0, 0, -5) // becomes invisible when <=-7
+	model := mgl32.Translate3D(0, 0, -2.5) // becomes invisible when <=-7 (probably because of Far camera param)
 	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
 	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
-	// idk what this does but it's texture specific
-	// textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
-	// gl.Uniform1i(textureUniform, 0)
+	offset := mgl32.Vec3{0.0, 0.0, 0.0}
+	offsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
+	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
-	// TODO what does this do? Maybe names the frag shader output?
-	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
-
-	// Load the texture
-	// texture, err := newTexture("src/square.png")
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-
-	// Configure the Vertex Array Object (vao)
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	// allocate Vertex Buffer Object (vbo) and pass pointer to vertex data
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-
+	// curVertices := screenVertices
 	curVertices := squareVertices
-	gl.BufferData(gl.ARRAY_BUFFER, len(curVertices)*FLOAT_SIZE, gl.Ptr(curVertices), gl.STATIC_DRAW)
+	vao := makeVao(curVertices)
+	entity := DrawableEntity{ORIGIN, SIZE_STANDARD, vao} // TODO make size based on vertices
 
-	// experimenting with circle
-	// circleVerts := mgl32.Circle(1.0, 1.0, 100)
-	// circleVertsFlat := make([]float32, 2*len(circleVerts))
-	// for i := 0; i < len(circleVerts); i++ {
-	// 	circleVertsFlat = append(circleVertsFlat, circleVerts[i][0], circleVerts[i][1], 0.0)
-	// 	// fmt.Println(circleVertsFlat)
-	// 	fmt.Println(circleVerts[i])
-	// }
-	// fmt.Println(len(circleVertsFlat))
-	// fmt.Println(circleVerts[1])
-	// fmt.Println(circleVertsFlat[3], circleVertsFlat[4], circleVertsFlat[5])
-	// curVertices := circleVertsFlat
-	// gl.BufferData(gl.ARRAY_BUFFER, len(squareVertices)*FLOAT_SIZE, gl.Ptr(curVertices), gl.STATIC_DRAW)
-	// // gl.BufferData(gl.ARRAY_BUFFER, len(circleVerts)*8, gl.Ptr(circleVerts), gl.STATIC_DRAW)
-	// gl.BufferData(gl.ARRAY_BUFFER, len(circleVertsFlat)*4, gl.Ptr(circleVertsFlat), gl.STATIC_DRAW)
+	_ = setShaderVars(program)
 
-	// set "vert" in vertex shader
-	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	// gl.VertexAttribPointerWithOffset(vertAttrib, 3, gl.FLOAT, false, STRIDE_SIZE*FLOAT_SIZE, 0)
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, 0, nil)
-
-	// set position vector in vertex shader
-	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	// gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 0, nil)
-	gl.VertexAttribPointerWithOffset(texCoordAttrib, 2, gl.FLOAT, true, STRIDE_SIZE*FLOAT_SIZE, 0)
-
-	// Configure global settings
+	// Global settings
 	// gl.Enable(gl.DEPTH_TEST)
 	// gl.DepthFunc(gl.LESS)
-	// gl.ClearColor(1.0, 1.0, 1.0, 1.0) set color of transparent pixel
+	gl.ClearColor(COLOR_CLEAR_R, COLOR_CLEAR_G, COLOR_CLEAR_B, COLOR_CLEAR_A)
 
-	angle := 0.0
 	previousTime := glfw.GetTime()
+	elapsed := float32(0.0)
 
-	// set millis uniform
 	millis := gl.GetUniformLocation(program, gl.Str("millis\x00"))
-	// gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 	gl.Uniform1f(millis, float32(previousTime))
-
+	xmod := float32(1.0)
 	for !window.ShouldClose() {
-		// if commented, screen is black and nothing renders
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
 		time := glfw.GetTime()
-		elapsed := time - previousTime
+		deltaTime := time - previousTime
+		elapsed += float32(deltaTime)
 		previousTime = time
 
-		gl.Uniform1f(millis, float32(previousTime))
-		angle += elapsed
-		// model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0}) // should be unit vector or objects will be sheared
-		// model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 0, 1}) // should be unit vector or objects will be sheared;
-		// model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0.55, 0.55, 0.55}) // should be unit vector or objects will be sheared;
+		gl.Uniform1f(millis, float32(time))
+
+		// model = mgl32.Translate3D(elapsed/100.0, elapsed/100.0, elapsed/100.0)
+		// trans := mgl32.Translate3D(0.01, 0.01, 0.0)
+		// model = model.Mul4(trans)
+		// model = mgl32.HomogRotate3D(float32(elapsed), mgl32.Vec3{0.55, 0.55, 0.55}) // should be unit vector or objects will be sheared;
+
+		offset = offset.Add(mgl32.Vec3{float32(deltaTime), float32(deltaTime), 0.0}.Mul(xmod))
+		// fmt.Println(offset)
+		entity.position.Add(offset)
+		if offset[0] > 1 || offset[0] < -1 {
+			xmod *= -1
+		}
 
 		// Render
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+		gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
-		gl.BindVertexArray(vao)
+		gl.BindVertexArray(entity.vao)
 
 		// apply texture to vertices
 		// gl.ActiveTexture(gl.TEXTURE0)
@@ -227,6 +196,18 @@ func initOpenGL() (uint32, error) {
 	return program, nil
 }
 
+func initCamera(program uint32) (mgl32.Mat4, mgl32.Mat4) {
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+
+	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 1}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
+	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
+
+	return projection, camera
+}
+
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
@@ -268,6 +249,38 @@ func loadShaders() (string, string) {
 	return vertexShader, fragmentShader
 }
 
+func makeVao(points []float32) uint32 {
+	// Make a Vertex Array Object (vao)
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	// allocate Vertex Buffer Object (vbo) and pass pointer to vertex data
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+
+	gl.BufferData(gl.ARRAY_BUFFER, len(points)*FLOAT_SIZE, gl.Ptr(points), gl.STATIC_DRAW)
+
+	return vao
+}
+
+func setShaderVars(program uint32) ShaderConfig {
+	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+
+	// vec3 vertices
+	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
+	gl.EnableVertexAttribArray(vertAttrib)
+	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, 0, nil)
+
+	// vec2 texture position
+	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
+	gl.EnableVertexAttribArray(texCoordAttrib)
+	gl.VertexAttribPointerWithOffset(texCoordAttrib, 2, gl.FLOAT, true, STRIDE_SIZE*FLOAT_SIZE, 0)
+
+	return ShaderConfig{vertAttrib, texCoordAttrib}
+}
+
 func loadTexture(file string) (uint32, error) {
 	imgFile, err := os.Open(file)
 	if err != nil {
@@ -306,14 +319,15 @@ func loadTexture(file string) (uint32, error) {
 	return texture, nil
 }
 
-// var squareVertices = []float32{
-// 	-1.0, -1.0, 0.0, 1.0, 0.0,
-// 	1.0, -1.0, 0.0, 0.0, 0.0,
-// 	-1.0, 1.0, 0.0, 1.0, 1.0,
-// 	1.0, -1.0, 0.0, 0.0, 0.0,
-// 	1.0, 1.0, 0.0, 0.0, 1.0,
-// 	-1.0, 1.0, 0.0, 1.0, 1.0,
-// }
+// TODO
+var screenVertices = []float32{
+	-4.5, -1.0, 0.0,
+	1.0, -1.0, 0.0,
+	-1.0, 1.0, 0.0,
+	1.0, -1.0, 0.0,
+	1.0, 1.0, 0.0,
+	-1.0, 1.0, 0.0,
+}
 
 var squareVertices = []float32{
 	-1.0, -1.0, 0.0,
@@ -328,65 +342,4 @@ var triangleVertices = []float32{
 	0, 0.5, 0, // top
 	-0.5, -0.5, 0, // left
 	0.5, -0.5, 0, // right}
-}
-
-// idk why but i need these UV dims or it looks weird
-// var triangleVertices = []float32{
-// 	0, 0.5, 0, 1.0, 0.0, // top
-// 	-0.5, -0.5, 0, 0.0, 0.0, // left
-// 	0.5, -0.5, 0, 1.0, 1.0, // right}
-// }
-
-var cubeVertices = []float32{
-	//  X, Y, Z, U, V
-	// UV is for UV mapping https://en.wikipedia.org/wiki/UV_mapping
-	// a face is 2 triangles, or 6 vertices
-	// 6 faces -> 36 vertices total
-	// Bottom
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-
-	// Top
-	-1.0, 1.0, -1.0, 0.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 1.0,
-	1.0, 1.0, -1.0, 1.0, 0.0,
-	1.0, 1.0, -1.0, 1.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 1.0,
-	1.0, 1.0, 1.0, 1.0, 1.0,
-
-	// Front
-	-1.0, -1.0, 1.0, 1.0, 0.0,
-	1.0, -1.0, 1.0, 0.0, 0.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-	1.0, -1.0, 1.0, 0.0, 0.0,
-	1.0, 1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-
-	// Back
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	-1.0, 1.0, -1.0, 0.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	-1.0, 1.0, -1.0, 0.0, 1.0,
-	1.0, 1.0, -1.0, 1.0, 1.0,
-
-	// Left
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, -1.0, 1.0, 0.0,
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-	-1.0, 1.0, -1.0, 1.0, 0.0,
-
-	// Right
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, 1.0, -1.0, 0.0, 0.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, 1.0, -1.0, 0.0, 0.0,
-	1.0, 1.0, 1.0, 0.0, 1.0,
 }

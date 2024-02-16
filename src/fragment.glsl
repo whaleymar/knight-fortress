@@ -17,7 +17,7 @@ float norm(float x) {
 
 void main() {
     // outputColor = texture(tex, fragTexCoord);
-    // outputColor = vec4(1.);
+    outputColor = vec4(1.);
 
     // fragTextCoord is in range (-1,1)
     // outputColor = vec4((fragTexCoord.x + 1)/2., (fragTexCoord.y+1)/2., 1., 1.);
@@ -40,12 +40,11 @@ void main() {
     // outputColor = vec4(c, 0., 1., 1.);
     
     // SDFs to draw circles
-    vec3 circle = vec3(0., 0., 0.5); // (xcenter, ycenter, radius)
-    // d = distance = pos if outside circle, neg if inside
-    float d = length(fragTexCoord - circle.xy) - circle.z;
-    // d = step(0., d);
-    d = invert(smoothstep(0., 0.01, d));
-    vec2 newpos = vec2(norm(fragTexCoord.x), norm(fragTexCoord.y));
-
-    outputColor = vec4(d * newpos.x, d * newpos.y, d, 1.);
+    // vec3 circle = vec3(0., 0., 0.5); // (xcenter, ycenter, radius)
+    // float d = length(fragTexCoord - circle.xy) - circle.z;
+    // // d = step(0., d);
+    // d = invert(smoothstep(0., 0.01, d));
+    // vec2 newpos = vec2(norm(fragTexCoord.x), norm(fragTexCoord.y));
+    //
+    // outputColor = vec4(d * newpos.x, d * newpos.y, d, 1.);
 }
