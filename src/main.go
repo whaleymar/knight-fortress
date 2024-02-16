@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -36,6 +37,7 @@ const (
 
 var ORIGIN = mgl32.Vec3{0.0, 0.0, 0.0}
 var SIZE_STANDARD = mgl32.Vec2{1.0, 1.0}
+var ZERO3 = mgl32.Vec3{0.0, 0.0, 0.0}
 
 type ShaderConfig struct {
 	vert             uint32
@@ -46,6 +48,8 @@ type DrawableEntity struct {
 	position mgl32.Vec3
 	size     mgl32.Vec2
 	vao      uint32
+	velocity mgl32.Vec3
+	accel    mgl32.Vec3
 }
 
 func init() {
@@ -75,9 +79,11 @@ func main() {
 	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
 	// curVertices := screenVertices
-	curVertices := squareVertices
+	// curVertices := squareVertices
+	curVertices := smallSquareVertices
 	vao := makeVao(curVertices)
-	entity := DrawableEntity{ORIGIN, SIZE_STANDARD, vao} // TODO make size based on vertices
+	entity := makeDrawableEntity(vao)
+	initControls(window, &entity)
 
 	_ = setShaderVars(program)
 
@@ -91,7 +97,7 @@ func main() {
 
 	millis := gl.GetUniformLocation(program, gl.Str("millis\x00"))
 	gl.Uniform1f(millis, float32(previousTime))
-	xmod := float32(1.0)
+	// xmod := float32(1.0)
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -102,23 +108,25 @@ func main() {
 		previousTime = time
 
 		gl.Uniform1f(millis, float32(time))
+		entity = entity.update()
 
 		// model = mgl32.Translate3D(elapsed/100.0, elapsed/100.0, elapsed/100.0)
 		// trans := mgl32.Translate3D(0.01, 0.01, 0.0)
 		// model = model.Mul4(trans)
 		// model = mgl32.HomogRotate3D(float32(elapsed), mgl32.Vec3{0.55, 0.55, 0.55}) // should be unit vector or objects will be sheared;
 
-		offset = offset.Add(mgl32.Vec3{float32(deltaTime), float32(deltaTime), 0.0}.Mul(xmod))
+		// offset = offset.Add(mgl32.Vec3{float32(deltaTime), float32(deltaTime), 0.0}.Mul(xmod))
 		// fmt.Println(offset)
-		entity.position.Add(offset)
-		if offset[0] > 1 || offset[0] < -1 {
-			xmod *= -1
-		}
+		// entity.position.Add(offset)
+		// if offset[0] > 2 || offset[0] < -2 {
+		// 	xmod *= -1
+		// }
 
 		// Render
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-		gl.Uniform3fv(offsetUniform, 1, &offset[0])
+		// gl.Uniform3fv(offsetUniform, 1, &offset[0])
+		gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
 
 		gl.BindVertexArray(entity.vao)
 
@@ -151,6 +159,38 @@ func initGlfw() *glfw.Window {
 	}
 	window.MakeContextCurrent()
 	return window
+}
+
+func initControls(window *glfw.Window, playerPointer *DrawableEntity) {
+	window.SetKeyCallback(playerControlsCallback)
+	window.SetUserPointer(unsafe.Pointer(playerPointer))
+}
+
+func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+	// fmt.Println(key, scancode, action, mods)
+	if action == glfw.Repeat {
+		return
+	}
+
+	var accel float32
+	if action == glfw.Release {
+		accel = 0.0
+	} else {
+		accel = 0.05
+	}
+
+	playerPointer := window.GetUserPointer()
+	player := (*DrawableEntity)(playerPointer)
+	switch key {
+	case glfw.KeyW:
+		player.accel[1] = accel
+	case glfw.KeyS:
+		player.accel[1] = -accel
+	case glfw.KeyA:
+		player.accel[0] = -accel
+	case glfw.KeyD:
+		player.accel[0] = accel
+	}
 }
 
 func initOpenGL() (uint32, error) {
@@ -319,6 +359,32 @@ func loadTexture(file string) (uint32, error) {
 	return texture, nil
 }
 
+func makeDrawableEntity(vao uint32) DrawableEntity {
+	entity := DrawableEntity{ORIGIN, SIZE_STANDARD, vao, ZERO3, ZERO3} // TODO make size based on vertices
+	return entity
+}
+
+func (entity DrawableEntity) update() DrawableEntity {
+	speedMax := float32(0.1)
+	speedMin := float32(-0.1)
+
+	entity.velocity = entity.velocity.Add(entity.accel)
+	if entity.velocity[0] > speedMax {
+		entity.velocity[0] = speedMax
+	} else if entity.velocity[0] < speedMin {
+		entity.velocity[0] = speedMin
+	} else if entity.velocity[1] > speedMax {
+		entity.velocity[1] = speedMax
+	} else if entity.velocity[1] < speedMin {
+		entity.velocity[1] = speedMin
+	}
+
+	entity.position = entity.position.Add(entity.velocity)
+
+	// fmt.Println(entity.position)
+	return entity
+}
+
 // TODO
 var screenVertices = []float32{
 	-4.5, -1.0, 0.0,
@@ -336,6 +402,15 @@ var squareVertices = []float32{
 	1.0, -1.0, 0.0,
 	1.0, 1.0, 0.0,
 	-1.0, 1.0, 0.0,
+}
+
+var smallSquareVertices = []float32{
+	-0.5, -0.5, 0.0,
+	0.5, -0.5, 0.0,
+	-0.5, 0.5, 0.0,
+	0.5, -0.5, 0.0,
+	0.5, 0.5, 0.0,
+	-0.5, 0.5, 0.0,
 }
 
 var triangleVertices = []float32{
