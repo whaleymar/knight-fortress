@@ -174,7 +174,7 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 
 	var accel float32
 	if action == glfw.Release {
-		accel = 0.0
+		accel = -0.05
 	} else {
 		accel = 0.05
 	}
@@ -183,19 +183,18 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 	player := (*DrawableEntity)(playerPointer)
 	switch key {
 	case glfw.KeyW:
-		player.accel[1] = accel
+		player.accel[1] += accel
 	case glfw.KeyS:
-		player.accel[1] = -accel
+		player.accel[1] -= accel
 	case glfw.KeyA:
-		player.accel[0] = -accel
+		player.accel[0] -= accel
 	case glfw.KeyD:
-		player.accel[0] = accel
+		player.accel[0] += accel
 	}
 }
 
 func initOpenGL() (uint32, error) {
 
-	// Initialize Glow
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
@@ -365,23 +364,37 @@ func makeDrawableEntity(vao uint32) DrawableEntity {
 }
 
 func (entity DrawableEntity) update() DrawableEntity {
+	// this is stinky garbage TODO
+
 	speedMax := float32(0.1)
 	speedMin := float32(-0.1)
+	zero := float32(0)
+	cutoff := float32(0.005)
+	friction := float32(0.5)
 
-	entity.velocity = entity.velocity.Add(entity.accel)
-	if entity.velocity[0] > speedMax {
-		entity.velocity[0] = speedMax
-	} else if entity.velocity[0] < speedMin {
-		entity.velocity[0] = speedMin
-	} else if entity.velocity[1] > speedMax {
-		entity.velocity[1] = speedMax
-	} else if entity.velocity[1] < speedMin {
-		entity.velocity[1] = speedMin
+	// X
+	for i := 0; i < 2; i++ {
+		if entity.accel[i] != zero {
+			entity.velocity[i] += entity.accel[i]
+			if entity.velocity[i] > speedMax {
+				entity.velocity[i] = speedMax
+			} else if entity.velocity[i] < speedMin {
+				entity.velocity[i] = speedMin
+			}
+		} else if entity.velocity[i] != zero {
+			entity.velocity[i] *= friction
+			if (entity.velocity[i] > zero && entity.velocity[i] < cutoff) || (entity.velocity[i] < zero && entity.velocity[i] > -cutoff) {
+				entity.velocity[i] = zero
+			}
+		}
 	}
 
 	entity.position = entity.position.Add(entity.velocity)
 
+	// fmt.Println(entity.accel)
+	// fmt.Println(entity.velocity)
 	// fmt.Println(entity.position)
+	// fmt.Println("")
 	return entity
 }
 
