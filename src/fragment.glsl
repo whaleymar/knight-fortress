@@ -16,8 +16,8 @@ float norm(float x) {
 }
 
 void main() {
-    // outputColor = texture(tex, fragTexCoord);
-    outputColor = vec4(1.);
+    outputColor = texture(tex, fragTexCoord);
+    // outputColor = vec4(1.);
 
     // fragTextCoord is in range (-1,1)
     // outputColor = vec4((fragTexCoord.x + 1)/2., (fragTexCoord.y+1)/2., 1., 1.);
