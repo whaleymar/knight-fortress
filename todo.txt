@@ -1,3 +1,5 @@
 openGL text (use to move a dot around and find screen edges)
+    - i have determined that gltext is ASS 
+    - i need to roll my own here
 gravity
 background

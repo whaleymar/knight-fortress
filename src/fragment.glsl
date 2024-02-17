@@ -15,8 +15,12 @@ float norm(float x) {
     return (x + 1.)/2.;
 }
 
+vec2 norm(vec2 vec) {
+    return vec2(norm(vec.x), norm(vec.y));
+}
+
 void main() {
-    outputColor = texture(tex, fragTexCoord);
+    outputColor = texture(tex, norm(fragTexCoord));
     // outputColor = vec4(1.);
 
     // fragTextCoord is in range (-1,1)
