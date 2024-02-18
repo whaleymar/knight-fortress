@@ -12,8 +12,9 @@ in vec2 vertTexCoord;
 out vec2 fragTexCoord;
 
 void main() {
-    vec4 totalOffset = vec4(offset, 0.);
-    gl_Position = projection * camera * model * vec4(vert, 1) + totalOffset;
+    vec4 totalOffset = vec4(offset, 0.) + vec4(1., 1., 0., 0.);
+    // gl_Position = projection * camera * vec4(vert, 1.);
+    gl_Position = projection * camera * vec4(vert, 1.) + totalOffset;
     
     fragTexCoord = vertTexCoord;
 }

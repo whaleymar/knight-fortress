@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"image/png"
+
+	// "image/png"
 	_ "image/png" // fixes "image: unknown format" error
 	"log"
 	"os"
@@ -12,7 +15,6 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"golang.org/x/image/font"
 )
 
 type ShaderConfig struct {
@@ -62,12 +64,28 @@ func initOpenGL() (uint32, error) {
 	return program, nil
 }
 
+//	func initCamera(program uint32) (mgl32.Mat4, mgl32.Mat4) {
+//		projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+//		projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+//		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+//
+//		camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 1}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, -1, 0})
+//		cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
+//		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
+//
+//		return projection, camera
+// }
+
 func initCamera(program uint32) (mgl32.Mat4, mgl32.Mat4) {
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projection := mgl32.Ortho2D(0, float32(windowWidth), 0, float32(windowHeight))
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 1}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	camera := mgl32.LookAtV(
+		mgl32.Vec3{float32(windowWidth) / 2, float32(windowHeight) / 2, 1}, // eye
+		mgl32.Vec3{float32(windowWidth) / 2, float32(windowHeight) / 2, 0}, // center
+		mgl32.Vec3{0, 1, 0}, // up
+	)
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 
@@ -137,12 +155,14 @@ func setShaderVars(program uint32) ShaderConfig {
 	// vec3 vertices
 	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, 0, nil)
+	// gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, 0, nil)
+	// gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, STRIDE_SIZE*FLOAT_SIZE, nil)
+	gl.VertexAttribPointerWithOffset(vertAttrib, 3, gl.FLOAT, false, STRIDE_SIZE*FLOAT_SIZE, 0)
 
 	// vec2 texture position
 	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
 	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointerWithOffset(texCoordAttrib, 2, gl.FLOAT, true, STRIDE_SIZE*FLOAT_SIZE, 0)
+	gl.VertexAttribPointerWithOffset(texCoordAttrib, 2, gl.FLOAT, false, STRIDE_SIZE*FLOAT_SIZE, 3*FLOAT_SIZE)
 
 	return ShaderConfig{vertAttrib, texCoordAttrib}
 }
@@ -185,46 +205,28 @@ func loadTexture(file string) (uint32, error) {
 	return texture, nil
 }
 
-// func loadFontTexture(dr image.Rectangle, mask image.Image, maskp image.Point, advance fixed.Int26_6, face font.Face) (uint32, error) {
-func loadFontTexture() (uint32, error) {
+func loadTextureFromMemory(img image.Image) (uint32, error) {
 
-	const (
-		width  = 72
-		height = 36
-		posX   = 0
-		posY   = 0
+	rgba := image.NewRGBA(
+		image.Rect(
+			0,
+			0,
+			img.Bounds().Dx(),
+			img.Bounds().Dy(),
+		),
 	)
-
-	gameFont, err := loadFont()
-	if err != nil {
-		return 0, err
+	if rgba.Stride != rgba.Rect.Size().X*4 {
+		return 0, fmt.Errorf("unsupported stride")
 	}
-	face, err := loadFontFace(gameFont)
-	if err != nil {
-		return 0, err
-	}
-
-	rgba := image.NewGray(image.Rect(0, 0, width, height))
-
-	// rgba := image.NewRGBA(dr.Bounds())
-	// draw.DrawMask(rgba, dr, mask, maskp, nil, maskp, draw.Over)
-	// fmt.Println(dr.Bounds(), mask.Bounds(), maskp, advance)
-
-	drawer := font.Drawer{
-		Dst:  rgba,
-		Src:  image.White,
-		Face: face,
-		Dot:  pixelCoords(posX, posY),
-	}
-
-	drawer.DrawString("Whaley")
-
+	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
+	fmt.Println("Drawing texture to GPU")
+	// saveImage(rgba, "tmp1.png")
 	var texture uint32
 	gl.GenTextures(1, &texture)
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 	gl.TexImage2D(
@@ -239,39 +241,36 @@ func loadFontTexture() (uint32, error) {
 		gl.Ptr(rgba.Pix))
 
 	return texture, nil
-
 }
 
-// TODO
+func saveImage(img image.Image, name string) {
+	f, err := os.Create(name)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if err = png.Encode(f, img); err != nil {
+		log.Printf("failed to encode image: %v", err)
+	}
+}
+
 var screenVertices = []float32{
-	-4.5, -1.0, 0.0,
-	1.0, -1.0, 0.0,
-	-1.0, 1.0, 0.0,
-	1.0, -1.0, 0.0,
-	1.0, 1.0, 0.0,
-	-1.0, 1.0, 0.0,
+	0.0, float32(windowHeight), 0.0, 0.0, 0.0,
+	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 1.0,
+	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
+	float32(windowWidth), 0.0, 0.0, 1.0, 1.0,
+	0.0, 0.0, 0.0, 0.0, 1.0,
 }
 
+var (
+	charDim = float32(64)
+)
 var squareVertices = []float32{
-	-1.0, -1.0, 0.0,
-	1.0, -1.0, 0.0,
-	-1.0, 1.0, 0.0,
-	1.0, -1.0, 0.0,
-	1.0, 1.0, 0.0,
-	-1.0, 1.0, 0.0,
-}
-
-var smallSquareVertices = []float32{
-	-0.5, -0.5, 0.0,
-	0.5, -0.5, 0.0,
-	-0.5, 0.5, 0.0,
-	0.5, -0.5, 0.0,
-	0.5, 0.5, 0.0,
-	-0.5, 0.5, 0.0,
-}
-
-var triangleVertices = []float32{
-	0, 0.5, 0, // top
-	-0.5, -0.5, 0, // left
-	0.5, -0.5, 0, // right}
+	0.0, charDim, 0.0, 0.0, 0.0,
+	charDim, charDim, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 1.0,
+	charDim, charDim, 0.0, 1.0, 0.0,
+	charDim, 0.0, 0.0, 1.0, 1.0,
+	0.0, 0.0, 0.0, 0.0, 1.0,
 }

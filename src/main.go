@@ -1,8 +1,12 @@
 package main
 
 import (
-	// "fmt"
+	_ "fmt"
+	// "image/png"
+	_ "image/png"
 	"log"
+	// "os"
+	_ "os"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -19,7 +23,7 @@ const (
 	VERTEX_FILE   = "src/vertex.glsl"
 	FRAGMENT_FILE = "src/fragment.glsl"
 
-	STRIDE_SIZE = 3
+	STRIDE_SIZE = 5
 	FLOAT_SIZE  = 4
 
 	COLOR_CLEAR_R = 0.28627450980392155
@@ -50,29 +54,24 @@ func main() {
 
 	_, _ = initCamera(program)
 
-	model := mgl32.Translate3D(0, 0, -2.5) // becomes invisible when <=-7 (probably because of Far camera param)
-	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-
 	offset := mgl32.Vec3{0.0, 0.0, 0.0}
 	offsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
 	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
 	// curVertices := screenVertices
-	// curVertices := squareVertices
-	curVertices := smallSquareVertices
-	vao := makeVao(curVertices)
-	entity := makeDrawableEntity(vao)
-	initControls(window, &entity)
+	curVertices := squareVertices
+	// curVertices := smallSquareVertices // TODO move the code that uses this (in main loop) to entity method
+	// entity := makePlayerEntity()
+	entity := getPlayerPtr()
+	initControls(window, entity)
 
 	_ = setShaderVars(program)
 
-	// Font
-	// fontTexture, err := loadFontTexture()
-
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
-	texture, err := loadTexture("src/square.png")
+
+	// texture, err := loadTexture("src/square.png")
+	texture, err := loadTextureFromMemory(entity.sprite.getFrame(0, 0))
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +87,12 @@ func main() {
 	millis := gl.GetUniformLocation(program, gl.Str("millis\x00"))
 	gl.Uniform1f(millis, float32(previousTime))
 	// xmod := float32(1.0)
+	frame := 0
 	for !window.ShouldClose() {
+		frame++
+		frame = frame % 60
+		// fmt.Printf("frame: %d\n", frame)
+
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
@@ -98,12 +102,10 @@ func main() {
 		previousTime = time
 
 		gl.Uniform1f(millis, float32(time))
-		entity = entity.update()
+		*entity = entity.update()
 
 		// Render
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-		// gl.Uniform3fv(offsetUniform, 1, &offset[0])
 		gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
 
 		gl.BindVertexArray(entity.vao)
@@ -112,7 +114,7 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		nVertices := int32(len(curVertices) / 3)
+		nVertices := int32(len(curVertices) / STRIDE_SIZE)
 		gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
 
 		// Maintenance

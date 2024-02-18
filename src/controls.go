@@ -1,14 +1,14 @@
 package main
 
 import (
-	"unsafe"
+	// "unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
 func initControls(window *glfw.Window, playerPointer *DrawableEntity) {
 	window.SetKeyCallback(playerControlsCallback)
-	window.SetUserPointer(unsafe.Pointer(playerPointer))
+	// window.SetUserPointer(unsafe.Pointer(playerPointer))
 }
 
 func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -24,7 +24,8 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 		accel = 0.05
 	}
 
-	playerPointer := window.GetUserPointer()
+	// playerPointer := window.GetUserPointer()
+	playerPointer := getPlayerPtr()
 	player := (*DrawableEntity)(playerPointer)
 	switch key {
 	case glfw.KeyW:
