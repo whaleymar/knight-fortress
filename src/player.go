@@ -25,6 +25,12 @@ const (
 	ANIM_VFRAMES_PLAYER  = 4
 )
 
+const (
+	ANIM_IDLE  = iota
+	ANIM_HMOVE = iota
+	ANIM_VMOVE = iota
+)
+
 type DrawableEntity struct {
 	position  mgl32.Vec3
 	size      mgl32.Vec2
@@ -35,14 +41,16 @@ type DrawableEntity struct {
 	frame     int
 	frameTime float64
 	animSpeed float64
+	animEnum  int
 }
 
 type Sprite struct {
-	pixels *image.RGBA
-	height int
-	width  int
-	hAnim  Animation
-	vAnim  Animation
+	pixels   *image.RGBA
+	height   int
+	width    int
+	idleAnim Animation
+	hAnim    Animation
+	vAnim    Animation
 }
 
 type Animation struct {
@@ -77,6 +85,7 @@ func makeDrawableEntity(vao uint32, sprite Sprite) DrawableEntity {
 		0,   // frame
 		0.0, // frametime
 		4.0, // anim frames per second
+		0,
 	} // TODO make size based on vertices
 	return entity
 }
@@ -94,12 +103,14 @@ func makePlayerSprite() Sprite {
 		panic(err)
 	}
 
+	idleAnim := Animation{ANIM_HOFFSET_PLAYER, 1}
 	hAnim := Animation{ANIM_HOFFSET_PLAYER, ANIM_HFRAMES_PLAYER}
 	vAnim := Animation{ANIM_VOFFSET_PLAYER, ANIM_VFRAMES_PLAYER}
 	return Sprite{
 		pixels,
 		SPRITE_HEIGHT_PLAYER,
 		SPRITE_WIDTH_PLAYER,
+		idleAnim,
 		hAnim,
 		vAnim,
 	}
@@ -113,36 +124,41 @@ func (entity *DrawableEntity) update(deltaTime float64) { // todo deltatime shou
 	speedMax := 0.01
 	velocityMax := float32(speedMax)
 	velocityMin := float32(-speedMax)
-	zero := float32(0)
+	zero1d := float32(0)
+	// zero2d := mgl32.Vec2{0,0}
 	cutoff := float32(0.0005)
 	friction := float32(0.5)
 
 	for i := 0; i < 2; i++ {
-		if entity.accel[i] != zero {
+		if entity.accel[i] != zero1d {
 			entity.velocity[i] += entity.accel[i]
 			if entity.velocity[i] > velocityMax {
 				entity.velocity[i] = velocityMax
 			} else if entity.velocity[i] < velocityMin {
 				entity.velocity[i] = velocityMin
 			}
-		} else if entity.velocity[i] != zero {
+		} else if entity.velocity[i] != zero1d {
 			entity.velocity[i] *= friction
-			if (entity.velocity[i] > zero && entity.velocity[i] < cutoff) || (entity.velocity[i] < zero && entity.velocity[i] > -cutoff) {
-				entity.velocity[i] = zero
+			if (entity.velocity[i] > zero1d && entity.velocity[i] < cutoff) || (entity.velocity[i] < zero1d && entity.velocity[i] > -cutoff) {
+				entity.velocity[i] = zero1d
 			}
 		}
 	}
 
 	entity.position = entity.position.Add(entity.velocity)
 
-	// fmt.Println(entity.accel)
-	// fmt.Println(entity.velocity)
-	// fmt.Println(entity.position)
-	// fmt.Println("")
+	// update animation
+	if entity.velocity[1] != 0 {
+		entity.animEnum = ANIM_VMOVE
+	} else if entity.velocity[0] != 0 {
+		entity.animEnum = ANIM_HMOVE
+	} else {
+		entity.animEnum = ANIM_IDLE
+	}
 
 	entity.frameTime += deltaTime
 	if entity.frameTime >= 1/entity.animSpeed {
-		entity.frame = (entity.frame + 1) % entity.sprite.vAnim.frames // TODO anim getter based on ix
+		entity.frame = (entity.frame + 1) % entity.sprite.getAnimation(entity.animEnum).frames
 		entity.frameTime = 0.0
 	}
 }
@@ -152,29 +168,42 @@ func (entity *DrawableEntity) getTexture(frame int) (uint32, error) {
 
 }
 
-func (entity *DrawableEntity) getSprite() image.Image {
-	// return entity.sprite.getFrame(entity.animIx, entity.frame)
-	return entity.sprite.getFrame(1, entity.frame) // TODO animIx
+func (entity *DrawableEntity) getSprite() *image.RGBA {
+	return entity.sprite.getFrame(entity.animEnum, entity.frame)
 }
 
-func (sprite Sprite) getFrame(animEnum, frame int) image.Image {
+func (sprite Sprite) getAnimation(animEnum int) Animation {
 	var anim Animation
 	switch animEnum {
-	case 0:
+	case ANIM_HMOVE:
 		anim = sprite.hAnim
-	case 1:
+	case ANIM_VMOVE:
 		anim = sprite.vAnim
 	default:
-		anim = sprite.hAnim
+		anim = sprite.idleAnim
 	}
-	_ = anim
+	return anim
+}
+
+func (sprite Sprite) getFrame(animEnum, frame int) *image.RGBA {
+	anim := sprite.getAnimation(animEnum)
 
 	y0 := sprite.height * anim.fileoffset
-	x0 := sprite.width * (frame % anim.frames) // dont think i need the modulo TODO
-	// fmt.Println(x0, y0)
+	x0 := sprite.width * frame
 	rect := image.Rect(x0, y0, x0+sprite.width, y0+sprite.height)
-	// fmt.Println(rect)
-	return sprite.pixels.SubImage(rect)
+	// return sprite.pixels.SubImage(rect)
+	img := sprite.pixels.SubImage(rect)
+	rgba := image.NewRGBA(
+		image.Rect(
+			0,
+			0,
+			img.Bounds().Dx(),
+			img.Bounds().Dy(),
+		),
+	)
+	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
+	return rgba
+
 }
 
 func loadImage(filename string) (*image.RGBA, error) {
