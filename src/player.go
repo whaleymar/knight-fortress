@@ -21,19 +21,20 @@ const (
 	SPRITE_WIDTH_PLAYER  = 16
 	ANIM_HOFFSET_PLAYER  = 1
 	ANIM_VOFFSET_PLAYER  = 0
-	ANIM_HFRAMES_PLAYER  = 3
-	ANIM_VFRAMES_PLAYER  = 5
+	ANIM_HFRAMES_PLAYER  = 2
+	ANIM_VFRAMES_PLAYER  = 4
 )
 
 type DrawableEntity struct {
-	position mgl32.Vec3
-	size     mgl32.Vec2
-	vao      uint32
-	velocity mgl32.Vec3
-	accel    mgl32.Vec3
-	sprite   Sprite // can't mix go ptrs with C pointers (when passed to player control GLFW function)
-	// sprite unsafe.Pointer
-	frame int
+	position  mgl32.Vec3
+	size      mgl32.Vec2
+	vao       uint32
+	velocity  mgl32.Vec3
+	accel     mgl32.Vec3
+	sprite    Sprite
+	frame     int
+	frameTime float64
+	animSpeed float64
 }
 
 type Sprite struct {
@@ -73,8 +74,9 @@ func makeDrawableEntity(vao uint32, sprite Sprite) DrawableEntity {
 		ZERO3,
 		ZERO3,
 		sprite,
-		// gl.Ptr(&sprite), // can't do unsafe ptr to struct?
-		0,
+		0,   // frame
+		0.0, // frametime
+		4.0, // anim frames per second
 	} // TODO make size based on vertices
 	return entity
 }
@@ -103,23 +105,25 @@ func makePlayerSprite() Sprite {
 	}
 }
 
-func (entity DrawableEntity) update() DrawableEntity {
+func (entity *DrawableEntity) update(deltaTime float64) { // todo deltatime should prob be singleton
 	// this is stinky garbage TODO
 	// magic numbers TODO
+	// deltatime TODO
 
-	speedMax := float32(0.1)
-	speedMin := float32(-0.1)
+	speedMax := 0.01
+	velocityMax := float32(speedMax)
+	velocityMin := float32(-speedMax)
 	zero := float32(0)
-	cutoff := float32(0.005)
+	cutoff := float32(0.0005)
 	friction := float32(0.5)
 
 	for i := 0; i < 2; i++ {
 		if entity.accel[i] != zero {
 			entity.velocity[i] += entity.accel[i]
-			if entity.velocity[i] > speedMax {
-				entity.velocity[i] = speedMax
-			} else if entity.velocity[i] < speedMin {
-				entity.velocity[i] = speedMin
+			if entity.velocity[i] > velocityMax {
+				entity.velocity[i] = velocityMax
+			} else if entity.velocity[i] < velocityMin {
+				entity.velocity[i] = velocityMin
 			}
 		} else if entity.velocity[i] != zero {
 			entity.velocity[i] *= friction
@@ -135,7 +139,22 @@ func (entity DrawableEntity) update() DrawableEntity {
 	// fmt.Println(entity.velocity)
 	// fmt.Println(entity.position)
 	// fmt.Println("")
-	return entity
+
+	entity.frameTime += deltaTime
+	if entity.frameTime >= 1/entity.animSpeed {
+		entity.frame = (entity.frame + 1) % entity.sprite.vAnim.frames // TODO anim getter based on ix
+		entity.frameTime = 0.0
+	}
+}
+
+func (entity *DrawableEntity) getTexture(frame int) (uint32, error) {
+	return loadTextureFromMemory(entity.getSprite())
+
+}
+
+func (entity *DrawableEntity) getSprite() image.Image {
+	// return entity.sprite.getFrame(entity.animIx, entity.frame)
+	return entity.sprite.getFrame(1, entity.frame) // TODO animIx
 }
 
 func (sprite Sprite) getFrame(animEnum, frame int) image.Image {
@@ -151,8 +170,10 @@ func (sprite Sprite) getFrame(animEnum, frame int) image.Image {
 	_ = anim
 
 	y0 := sprite.height * anim.fileoffset
-	x0 := sprite.width * frame % anim.frames
+	x0 := sprite.width * (frame % anim.frames) // dont think i need the modulo TODO
+	// fmt.Println(x0, y0)
 	rect := image.Rect(x0, y0, x0+sprite.width, y0+sprite.height)
+	// fmt.Println(rect)
 	return sprite.pixels.SubImage(rect)
 }
 

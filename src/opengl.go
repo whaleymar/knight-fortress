@@ -219,7 +219,7 @@ func loadTextureFromMemory(img image.Image) (uint32, error) {
 		return 0, fmt.Errorf("unsupported stride")
 	}
 	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
-	fmt.Println("Drawing texture to GPU")
+	// TODO can i just pass a pointer to img.Pix? Would be a lot faster
 	// saveImage(rgba, "tmp1.png")
 	var texture uint32
 	gl.GenTextures(1, &texture)

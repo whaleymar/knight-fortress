@@ -71,7 +71,7 @@ func main() {
 	gl.Uniform1i(textureUniform, 0)
 
 	// texture, err := loadTexture("src/square.png")
-	texture, err := loadTextureFromMemory(entity.sprite.getFrame(0, 0))
+	texture, err := entity.getTexture(0)
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +79,9 @@ func main() {
 	// Global settings
 	// gl.Enable(gl.DEPTH_TEST)
 	// gl.DepthFunc(gl.LESS)
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
 	gl.ClearColor(COLOR_CLEAR_R, COLOR_CLEAR_G, COLOR_CLEAR_B, COLOR_CLEAR_A)
 
 	previousTime := glfw.GetTime()
@@ -102,7 +105,7 @@ func main() {
 		previousTime = time
 
 		gl.Uniform1f(millis, float32(time))
-		*entity = entity.update()
+		entity.update(deltaTime)
 
 		// Render
 		gl.UseProgram(program)
@@ -110,7 +113,8 @@ func main() {
 
 		gl.BindVertexArray(entity.vao)
 
-		// apply texture to vertices
+		// bind `texture` to texture uniform at index 0
+		texture, err = entity.getTexture(frame)
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
