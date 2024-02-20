@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"image"
-	"image/draw"
+	// "image/draw"
 	"image/png"
 
-	// "image/png"
-	_ "image/png" // fixes "image: unknown format" error
 	"log"
 	"os"
 	"path/filepath"
@@ -155,8 +153,6 @@ func setShaderVars(program uint32) ShaderConfig {
 	// vec3 vertices
 	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
-	// gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, 0, nil)
-	// gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, true, STRIDE_SIZE*FLOAT_SIZE, nil)
 	gl.VertexAttribPointerWithOffset(vertAttrib, 3, gl.FLOAT, false, STRIDE_SIZE*FLOAT_SIZE, 0)
 
 	// vec2 texture position
@@ -167,45 +163,7 @@ func setShaderVars(program uint32) ShaderConfig {
 	return ShaderConfig{vertAttrib, texCoordAttrib}
 }
 
-func loadTexture(file string) (uint32, error) {
-	imgFile, err := os.Open(file)
-	if err != nil {
-		return 0, fmt.Errorf("texture %q not found on disk: %v", file, err)
-	}
-	img, _, err := image.Decode(imgFile)
-	if err != nil {
-		return 0, err
-	}
-
-	rgba := image.NewRGBA(img.Bounds())
-	if rgba.Stride != rgba.Rect.Size().X*4 {
-		return 0, fmt.Errorf("unsupported stride")
-	}
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
-
-	var texture uint32
-	gl.GenTextures(1, &texture)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
-		0,
-		gl.RGBA,
-		int32(rgba.Rect.Size().X),
-		int32(rgba.Rect.Size().Y),
-		0,
-		gl.RGBA,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(rgba.Pix))
-
-	return texture, nil
-}
-
-func loadTextureFromMemory(rgba *image.RGBA) (uint32, error) {
+func loadTexture(rgba *image.RGBA) (uint32, error) {
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -240,6 +198,20 @@ func saveImage(img image.Image, name string) {
 	}
 }
 
+func makeSquareVertices(pixelWidth, pixelHeight int) []float32 {
+	fWidth := float32(pixelWidth)
+	fHeight := float32(pixelHeight)
+
+	return []float32{
+		0.0, fHeight, 0.0, 0.0, 0.0,
+		fWidth, fHeight, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 0.0, 1.0,
+		fWidth, fHeight, 0.0, 1.0, 0.0,
+		fWidth, 0.0, 0.0, 1.0, 1.0,
+		0.0, 0.0, 0.0, 0.0, 1.0,
+	}
+}
+
 var screenVertices = []float32{
 	0.0, float32(windowHeight), 0.0, 0.0, 0.0,
 	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
@@ -250,13 +222,6 @@ var screenVertices = []float32{
 }
 
 var (
-	charDim = float32(64)
+	charDim = 64
 )
-var squareVertices = []float32{
-	0.0, charDim, 0.0, 0.0, 0.0,
-	charDim, charDim, 0.0, 1.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 1.0,
-	charDim, charDim, 0.0, 1.0, 0.0,
-	charDim, 0.0, 0.0, 1.0, 1.0,
-	0.0, 0.0, 0.0, 0.0, 1.0,
-}
+var squareVertices []float32 = makeSquareVertices(charDim, charDim)

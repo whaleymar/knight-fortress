@@ -1,40 +1,48 @@
 package main
 
 import (
-	// "unsafe"
-
 	"github.com/go-gl/glfw/v3.3/glfw"
+	// "github.com/go-gl/mathgl/mgl32"
 )
 
-func initControls(window *glfw.Window, playerPointer *DrawableEntity) {
+// type cControllable struct { // this is coupled to cMovable
+// 	acceleration mgl32.Vec2
+// }
+
+func initControls(window *glfw.Window, playerPointer *PlayerEntity) {
 	window.SetKeyCallback(playerControlsCallback)
-	// window.SetUserPointer(unsafe.Pointer(playerPointer))
 }
 
 func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	// fmt.Println(key, scancode, action, mods)
 	if action == glfw.Repeat {
 		return
 	}
 
 	var accel float32
 	if action == glfw.Release {
-		accel = -0.05
+		accel = -0.05 // TODO magic number
 	} else {
 		accel = 0.05
 	}
 
-	// playerPointer := window.GetUserPointer()
 	playerPointer := getPlayerPtr()
-	player := (*DrawableEntity)(playerPointer)
+	player := (*PlayerEntity)(playerPointer)
+	compInterface, err := player.getComponent(CMP_MOVABLE)
+	if err != nil {
+		return
+	}
+	moveComponent, ok := (*compInterface).(*cMovable)
+	if !ok {
+		return
+	}
 	switch key {
 	case glfw.KeyW:
-		player.accel[1] += accel
+		moveComponent.accel[1] += accel
 	case glfw.KeyS:
-		player.accel[1] -= accel
+		moveComponent.accel[1] -= accel
 	case glfw.KeyA:
-		player.accel[0] -= accel
+		moveComponent.accel[0] -= accel
 	case glfw.KeyD:
-		player.accel[0] += accel
+		moveComponent.accel[0] += accel
 	}
 }

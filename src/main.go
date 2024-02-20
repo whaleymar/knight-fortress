@@ -1,12 +1,14 @@
 package main
 
 import (
-	_ "fmt"
+	"fmt"
+	// "time"
+
 	// "image/png"
 	_ "image/png"
 	"log"
+
 	// "os"
-	_ "os"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -33,7 +35,8 @@ const (
 )
 
 var ORIGIN = mgl32.Vec3{0.0, 0.0, 0.0}
-var SIZE_STANDARD = mgl32.Vec2{1.0, 1.0}
+
+// var SIZE_STANDARD = mgl32.Vec2{1.0, 1.0}
 var ZERO3 = mgl32.Vec3{0.0, 0.0, 0.0}
 
 func init() {
@@ -54,67 +57,72 @@ func main() {
 
 	_, _ = initCamera(program)
 
+	// player position uniform
 	offset := mgl32.Vec3{0.0, 0.0, 0.0}
 	offsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
 	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
-	// curVertices := screenVertices
-	curVertices := squareVertices
-	// curVertices := smallSquareVertices // TODO move the code that uses this (in main loop) to entity method
-	// entity := makePlayerEntity()
-	entity := getPlayerPtr()
-	initControls(window, entity)
+	curVertices := squareVertices // TODO move the code that uses this (in main loop) to entity method
+	player := getPlayerPtr()
+	initControls(window, player)
 
 	_ = setShaderVars(program)
 
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 
-	// texture, err := loadTexture("src/square.png")
-	texture, err := entity.getTexture(0)
+	drawInterface, err := player.getComponent(CMP_DRAWABLE)
+	if err != nil {
+		panic("Player is not drawable")
+	}
+	drawComponent, ok := (*drawInterface).(*cDrawable)
+	if !ok {
+		panic("Player is not drawable")
+	}
+	texture, err := drawComponent.getTexture()
 	if err != nil {
 		panic(err)
 	}
 
-	// Global settings
-	// gl.Enable(gl.DEPTH_TEST)
-	// gl.DepthFunc(gl.LESS)
+	// OpenGL settings
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-
 	gl.ClearColor(COLOR_CLEAR_R, COLOR_CLEAR_G, COLOR_CLEAR_B, COLOR_CLEAR_A)
 
-	previousTime := glfw.GetTime()
-	elapsed := float32(0.0)
-
+	// Time
 	millis := gl.GetUniformLocation(program, gl.Str("millis\x00"))
-	gl.Uniform1f(millis, float32(previousTime))
-	// xmod := float32(1.0)
-	frame := 0
-	for !window.ShouldClose() {
-		frame++
-		frame = frame % 60
-		// fmt.Printf("frame: %d\n", frame)
+	gl.Uniform1f(millis, float32(glfw.GetTime()))
+	fpsCh := make(chan float32)
+	go updateFPS(fpsCh)
 
+	// _, _, _, _ = curVertices, texture, previousTime, currentTime
+	for !window.ShouldClose() {
+		DeltaTime.update()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
-		time := glfw.GetTime()
-		deltaTime := time - previousTime
-		elapsed += float32(deltaTime)
-		previousTime = time
-
-		gl.Uniform1f(millis, float32(time))
-		entity.update(deltaTime)
+		fpsCh <- 1 / DeltaTime.get()
+		//
+		gl.Uniform1f(millis, float32(glfw.GetTime()))
+		player.components.update(player)
 
 		// Render
-		gl.UseProgram(program)
-		gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
-
-		gl.BindVertexArray(entity.vao)
+		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
+		gl.Uniform3fv(offsetUniform, 1, &player.position[0])
 
 		// bind `texture` to texture uniform at index 0
-		texture, err = entity.getTexture(frame)
+		prevTexture := texture
+		drawInterface, err := player.getComponent(CMP_DRAWABLE)
+		if err == nil {
+			drawComponent, ok := (*drawInterface).(*cDrawable)
+			if ok {
+				gl.BindVertexArray(drawComponent.vao)
+				texture, err = drawComponent.getTexture()
+				if err != nil {
+					texture = prevTexture
+				}
+			}
+		}
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
@@ -143,4 +151,12 @@ func initGlfw() *glfw.Window {
 	}
 	window.MakeContextCurrent()
 	return window
+}
+
+func updateFPS(fpsCh <-chan float32) {
+	for fps := range fpsCh {
+		// Move cursor up and to the beginning of the line
+		fmt.Print("\033[F\033[K")
+		fmt.Printf("FPS: %f\n", fps)
+	}
 }
