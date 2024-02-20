@@ -9,7 +9,8 @@ import (
 type ComponentType int
 
 const (
-	CMP_DRAWABLE ComponentType = iota
+	CMP_ANY ComponentType = iota
+	CMP_DRAWABLE
 	CMP_MOVABLE
 )
 
@@ -17,7 +18,100 @@ type ComponentTypeList interface {
 	Component
 }
 
-func getComponent[T ComponentTypeList](enum ComponentType, entity Entity) (*T, error) {
+type Entity struct {
+	uid        uint64
+	components ComponentManager
+	position   mgl32.Vec3
+}
+
+func (entity *Entity) getPosition() mgl32.Vec3 {
+	return entity.position
+}
+
+func (entity *Entity) setPosition(position mgl32.Vec3) {
+	entity.position = position
+}
+
+func (entity *Entity) getManager() ComponentManager {
+	return entity.components
+}
+
+// TODO double check that these *actually* need to be pointers
+// TODO mutex add/remove
+type EntityManager struct {
+	entities []*Entity
+}
+
+var entityManagerPtr *EntityManager
+
+func getEntityManager() *EntityManager {
+	if entityManagerPtr == nil {
+		lock.Lock() // TODO read documentation, I might need a separate lock mechanism for this
+		defer lock.Unlock()
+		if entityManagerPtr == nil {
+			eMgr := EntityManager{}
+			entityManagerPtr = &eMgr
+		}
+	}
+	return entityManagerPtr
+}
+
+func (eMgr *EntityManager) add(entity Entity) {
+	// enforce uniqueness?
+	eMgr.entities = append(eMgr.entities, &entity)
+}
+
+func (eMgr *EntityManager) remove(uid uint64) {
+	for i, entity := range eMgr.entities {
+		if uid == entity.uid {
+			eMgr.entities = append(eMgr.entities[:i], eMgr.entities[i+1:]...)
+			return
+		}
+	}
+}
+
+func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
+	for _, entity := range eMgr.entities {
+		if uid == entity.uid {
+			return entity, nil
+		}
+	}
+	return nil, fmt.Errorf("Entity with ID %d not found", uid)
+}
+
+func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entity {
+	if enum == CMP_ANY {
+		return eMgr.entities
+	}
+	entities := make([]*Entity, 0, len(eMgr.entities))
+	for _, entity := range eMgr.entities {
+		_, err := entity.getManager().get(enum)
+		if err != nil {
+			continue
+		}
+		entities = append(entities, entity)
+	}
+	return entities
+}
+
+// idk if i need multiple of these... maybe an event manager
+type ComponentManager interface {
+	add(Component)
+	get(ComponentType) (*Component, error)
+	remove(ComponentType) error
+	update(*Entity)
+}
+
+type ComponentList struct {
+	components []Component
+}
+
+type Component interface {
+	update(*Entity)
+	getType() ComponentType
+}
+
+func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, error) {
 	compMgr := entity.getManager()
 	compInterface, err := compMgr.get(enum)
 	if err != nil {
@@ -29,30 +123,6 @@ func getComponent[T ComponentTypeList](enum ComponentType, entity Entity) (*T, e
 		return nil, fmt.Errorf("No %d component found", enum)
 	}
 	return &comp, nil
-}
-
-type Entity interface {
-	// init() // TODO i have to figure out how generics work to return a T here
-	getPosition() mgl32.Vec3
-	setPosition(mgl32.Vec3)
-	getManager() ComponentManager
-}
-
-// idk if i need multiple of these... maybe an event manager
-type ComponentManager interface {
-	add(Component)
-	get(ComponentType) (*Component, error)
-	remove(ComponentType) error
-	update(Entity)
-}
-
-type ComponentList struct {
-	components []Component
-}
-
-type Component interface {
-	update(Entity)
-	getType() ComponentType
 }
 
 func (components *ComponentList) add(comp Component) {
@@ -80,7 +150,7 @@ func (components *ComponentList) remove(enum ComponentType) error {
 	return fmt.Errorf("Component not found: %d", enum)
 }
 
-func (components *ComponentList) update(entity Entity) {
+func (components *ComponentList) update(entity *Entity) {
 	for _, comp := range components.components {
 		comp.update(entity)
 	}

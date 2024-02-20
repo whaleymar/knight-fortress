@@ -18,7 +18,7 @@ type cMovable struct {
 	speedMax float32
 }
 
-func (comp *cMovable) update(entity Entity) {
+func (comp *cMovable) update(entity *Entity) {
 	// TODO magic numbers
 	// also code kinda disgusting
 

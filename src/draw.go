@@ -10,6 +10,7 @@ import (
 
 type cDrawable struct {
 	enum        ComponentType
+	vertices    []float32
 	vao         uint32
 	sprite      Sprite
 	animManager AnimationManager
@@ -34,7 +35,7 @@ type AnimationManager struct {
 	animIx    int
 }
 
-func (comp *cDrawable) update(entity Entity) {
+func (comp *cDrawable) update(entity *Entity) {
 	animManager := &comp.animManager
 	animManager.frameTime += DeltaTime.get()
 	if animManager.frameTime >= 1/animManager.animSpeed {

@@ -62,23 +62,26 @@ func main() {
 	offsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
 	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
-	curVertices := squareVertices // TODO move the code that uses this (in main loop) to entity method
-	player := getPlayerPtr()
-	initControls(window, player)
+	initControls(window)
 
 	_ = setShaderVars(program)
 
+	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 
-	drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
-	if err != nil {
-		panic("Player is not drawable")
-	}
-	texture, err := (*drawComponent).getTexture()
-	if err != nil {
-		panic(err)
-	}
+	// init player and entity manager
+	entityManager := getEntityManager()
+	entityManager.add(*getPlayerPtr())
+	// drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
+	// if err != nil {
+	// 	panic("Player is not drawable")
+	// }
+	// curVertices := (*drawComponent).vertices
+	// texture, err := (*drawComponent).getTexture()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// OpenGL settings
 	gl.Enable(gl.BLEND)
@@ -91,35 +94,52 @@ func main() {
 	fpsCh := make(chan float32)
 	go updateFPS(fpsCh)
 
-	// _, _, _, _ = curVertices, texture, previousTime, currentTime
 	for !window.ShouldClose() {
 		DeltaTime.update()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
 		fpsCh <- 1 / DeltaTime.get()
-		//
+
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
-		player.components.update(player)
+		for _, entity := range entityManager.getEntitiesWithComponent(CMP_ANY) {
+			// fmt.Println("updating: ", i)
+			entity.components.update(entity)
+		}
 
 		// Render
 		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
-		gl.Uniform3fv(offsetUniform, 1, &player.position[0])
 
-		// bind `texture` to texture uniform at index 0
-		prevTexture := texture
-		drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
-		if err == nil {
-			texture, err = (*drawComponent).getTexture()
-			if err != nil {
-				texture = prevTexture
+		for _, entity := range entityManager.getEntitiesWithComponent(CMP_DRAWABLE) {
+			// fmt.Println("drawing: ", i)
+			gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
+
+			// bind `texture` to texture uniform at index 0
+			prevTexture := texture // this might fail on frame 0
+			var drawComponent *cDrawable
+			if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err == nil {
+				// CURRENT BUG:
+				// this seems like an openGL issue
+				// drawComponent state seems fine
+
+				// fmt.Println("rendering")
+				drawComponent = *tmp
+				// fmt.Println(drawComponent.animManager.frame)
+				// saveImage(drawComponent.getFrame(), fmt.Sprintf("tmp/test%f", glfw.GetTime()))
+				texture, err = drawComponent.getTexture()
+				if err != nil {
+					texture = prevTexture
+				}
+				gl.ActiveTexture(gl.TEXTURE0)
+				gl.BindTexture(gl.TEXTURE_2D, texture)
+
+				nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
+				gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
+			} else {
+				fmt.Println(err)
 			}
-		}
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		nVertices := int32(len(curVertices) / STRIDE_SIZE)
-		gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
+		}
 
 		// Maintenance
 		window.SwapBuffers()
@@ -148,7 +168,8 @@ func initGlfw() *glfw.Window {
 func updateFPS(fpsCh <-chan float32) {
 	for fps := range fpsCh {
 		// Move cursor up and to the beginning of the line
-		fmt.Print("\033[F\033[K")
-		fmt.Printf("FPS: %f\n", fps)
+		// fmt.Print("\033[F\033[K")
+		// fmt.Printf("FPS: %f\n", fps)
+		_ = fps
 	}
 }

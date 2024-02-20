@@ -16,31 +16,10 @@ const (
 	ANIM_VFRAMES_PLAYER  = 4
 )
 
-type PlayerEntity struct {
-	components ComponentManager
-	position   mgl32.Vec3
-}
-
-// func (entity *PlayerEntity) init() {
-//
-// }
-
-func (entity *PlayerEntity) getPosition() mgl32.Vec3 {
-	return entity.position
-}
-
-func (entity *PlayerEntity) setPosition(position mgl32.Vec3) {
-	entity.position = position
-}
-
-func (entity *PlayerEntity) getManager() ComponentManager {
-	return entity.components
-}
-
 var lock = &sync.Mutex{} // this is package-wide, maybe move somewhere else (god i miss namespaces) TODO
-var playerPtr *PlayerEntity
+var playerPtr *Entity
 
-func getPlayerPtr() *PlayerEntity {
+func getPlayerPtr() *Entity {
 	if playerPtr == nil {
 		lock.Lock()
 		defer lock.Unlock()
@@ -52,16 +31,18 @@ func getPlayerPtr() *PlayerEntity {
 	return playerPtr
 }
 
-func makePlayerEntity() PlayerEntity {
-	curVertices := squareVertices
-	vao := makeVao(curVertices)
-	entity := PlayerEntity{
+func makePlayerEntity() Entity {
+	vertices := squareVertices
+	vao := makeVao(vertices)
+	entity := Entity{
+		0,
 		&ComponentList{},
 		mgl32.Vec3{},
 	}
 
 	entity.components.add(&cDrawable{
 		CMP_DRAWABLE,
+		vertices,
 		vao,
 		makePlayerSprite(),
 		makePlayerAnimationManager(),

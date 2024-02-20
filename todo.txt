@@ -1,4 +1,5 @@
 stringer code generation for enum
+i might be fucking myself passing around so many pointers once i start multi threading
 
 golang debugger (erroring)
 entity component system with observer pattern

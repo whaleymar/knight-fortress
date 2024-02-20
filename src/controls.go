@@ -9,7 +9,7 @@ import (
 // 	acceleration mgl32.Vec2
 // }
 
-func initControls(window *glfw.Window, playerPointer *PlayerEntity) {
+func initControls(window *glfw.Window) {
 	window.SetKeyCallback(playerControlsCallback)
 }
 
@@ -25,8 +25,7 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 		accel = 0.05
 	}
 
-	playerPointer := getPlayerPtr()
-	player := (*PlayerEntity)(playerPointer)
+	player := getPlayerPtr()
 
 	var moveComponent *cMovable
 	if tmp, err := getComponent[*cMovable](CMP_MOVABLE, player); err != nil {
