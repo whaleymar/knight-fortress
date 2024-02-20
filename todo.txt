@@ -1,7 +1,3 @@
-nullptr deref fix
-    - (DONE) add movecomp to player
-    - (DONE) test functionality with verbose fix
-    - try generic compGetter function which checks err and ok in one step
 stringer code generation for enum
 
 golang debugger (erroring)

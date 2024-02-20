@@ -33,8 +33,8 @@ func (entity *PlayerEntity) setPosition(position mgl32.Vec3) {
 	entity.position = position
 }
 
-func (entity *PlayerEntity) getComponent(enum ComponentType) (*Component, error) {
-	return entity.components.get(enum)
+func (entity *PlayerEntity) getManager() ComponentManager {
+	return entity.components
 }
 
 var lock = &sync.Mutex{} // this is package-wide, maybe move somewhere else (god i miss namespaces) TODO

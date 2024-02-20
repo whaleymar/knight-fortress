@@ -27,13 +27,12 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 
 	playerPointer := getPlayerPtr()
 	player := (*PlayerEntity)(playerPointer)
-	compInterface, err := player.getComponent(CMP_MOVABLE)
-	if err != nil {
+
+	var moveComponent *cMovable
+	if tmp, err := getComponent[*cMovable](CMP_MOVABLE, player); err != nil {
 		return
-	}
-	moveComponent, ok := (*compInterface).(*cMovable)
-	if !ok {
-		return
+	} else {
+		moveComponent = *tmp
 	}
 	switch key {
 	case glfw.KeyW:

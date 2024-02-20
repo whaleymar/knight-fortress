@@ -13,11 +13,29 @@ const (
 	CMP_MOVABLE
 )
 
+type ComponentTypeList interface {
+	Component
+}
+
+func getComponent[T ComponentTypeList](enum ComponentType, entity Entity) (*T, error) {
+	compMgr := entity.getManager()
+	compInterface, err := compMgr.get(enum)
+	if err != nil {
+		return nil, fmt.Errorf("No %d component found", enum)
+	}
+
+	comp, ok := (*compInterface).(T)
+	if !ok {
+		return nil, fmt.Errorf("No %d component found", enum)
+	}
+	return &comp, nil
+}
+
 type Entity interface {
 	// init() // TODO i have to figure out how generics work to return a T here
 	getPosition() mgl32.Vec3
 	setPosition(mgl32.Vec3)
-	getComponent(ComponentType) (*Component, error)
+	getManager() ComponentManager
 }
 
 // idk if i need multiple of these... maybe an event manager

@@ -71,15 +71,11 @@ func main() {
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 
-	drawInterface, err := player.getComponent(CMP_DRAWABLE)
+	drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
 	if err != nil {
 		panic("Player is not drawable")
 	}
-	drawComponent, ok := (*drawInterface).(*cDrawable)
-	if !ok {
-		panic("Player is not drawable")
-	}
-	texture, err := drawComponent.getTexture()
+	texture, err := (*drawComponent).getTexture()
 	if err != nil {
 		panic(err)
 	}
@@ -112,15 +108,11 @@ func main() {
 
 		// bind `texture` to texture uniform at index 0
 		prevTexture := texture
-		drawInterface, err := player.getComponent(CMP_DRAWABLE)
+		drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
 		if err == nil {
-			drawComponent, ok := (*drawInterface).(*cDrawable)
-			if ok {
-				gl.BindVertexArray(drawComponent.vao)
-				texture, err = drawComponent.getTexture()
-				if err != nil {
-					texture = prevTexture
-				}
+			texture, err = (*drawComponent).getTexture()
+			if err != nil {
+				texture = prevTexture
 			}
 		}
 		gl.ActiveTexture(gl.TEXTURE0)

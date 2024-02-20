@@ -48,13 +48,11 @@ func (comp *cMovable) update(entity Entity) {
 
 	entity.setPosition(entity.getPosition().Add(comp.velocity))
 
-	drawInterface, err := entity.getComponent(CMP_DRAWABLE)
-	if err != nil {
+	var drawComponent *cDrawable
+	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err != nil {
 		return
-	}
-	drawComponent, ok := (*drawInterface).(*cDrawable)
-	if !ok {
-		return
+	} else {
+		drawComponent = *tmp
 	}
 
 	// update animation based on velocity
