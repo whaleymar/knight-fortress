@@ -64,24 +64,15 @@ func main() {
 
 	initControls(window)
 
+	// init player and entity manager
+	entityManager := getEntityManager()
+	entityManager.add(*getPlayerPtr()) // player pointer HAS to be initted before setShaderVars runs - something about making a VAO?
+
 	_ = setShaderVars(program)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
-
-	// init player and entity manager
-	entityManager := getEntityManager()
-	entityManager.add(*getPlayerPtr())
-	// drawComponent, err := getComponent[*cDrawable](CMP_DRAWABLE, player)
-	// if err != nil {
-	// 	panic("Player is not drawable")
-	// }
-	// curVertices := (*drawComponent).vertices
-	// texture, err := (*drawComponent).getTexture()
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	// OpenGL settings
 	gl.Enable(gl.BLEND)
@@ -103,7 +94,6 @@ func main() {
 
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
 		for _, entity := range entityManager.getEntitiesWithComponent(CMP_ANY) {
-			// fmt.Println("updating: ", i)
 			entity.components.update(entity)
 		}
 
@@ -111,20 +101,13 @@ func main() {
 		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
 
 		for _, entity := range entityManager.getEntitiesWithComponent(CMP_DRAWABLE) {
-			// fmt.Println("drawing: ", i)
 			gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
 
 			// bind `texture` to texture uniform at index 0
 			prevTexture := texture // this might fail on frame 0
 			var drawComponent *cDrawable
 			if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err == nil {
-				// CURRENT BUG:
-				// this seems like an openGL issue
-				// drawComponent state seems fine
-
-				// fmt.Println("rendering")
 				drawComponent = *tmp
-				// fmt.Println(drawComponent.animManager.frame)
 				// saveImage(drawComponent.getFrame(), fmt.Sprintf("tmp/test%f", glfw.GetTime()))
 				texture, err = drawComponent.getTexture()
 				if err != nil {
@@ -168,8 +151,8 @@ func initGlfw() *glfw.Window {
 func updateFPS(fpsCh <-chan float32) {
 	for fps := range fpsCh {
 		// Move cursor up and to the beginning of the line
-		// fmt.Print("\033[F\033[K")
-		// fmt.Printf("FPS: %f\n", fps)
-		_ = fps
+		fmt.Print("\033[F\033[K")
+		fmt.Printf("FPS: %f\n", fps)
+		// _ = fps
 	}
 }
