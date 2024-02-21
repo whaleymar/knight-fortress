@@ -68,7 +68,11 @@ func main() {
 	entityManager := getEntityManager()
 	entityManager.add(*getPlayerPtr()) // player pointer HAS to be initted before setShaderVars runs - something about making a VAO?
 
-	_ = setShaderVars(program)
+	entityManager.add(makeLevelEntity())
+	// levelEntity := makeLevelEntity()
+	// _ = levelEntity
+
+	_ = updateShaderVars(program)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -93,12 +97,28 @@ func main() {
 		fpsCh <- 1 / DeltaTime.get()
 
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
+
 		for _, entity := range entityManager.getEntitiesWithComponent(CMP_ANY) {
 			entity.components.update(entity)
 		}
 
 		// Render
 		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
+
+		// if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, &levelEntity); err == nil {
+		// 	drawComponent := *tmp
+		// texture, err = drawComponent.getTexture()
+		// if err != nil {
+		// 	_ = texture
+		// }
+		// gl.ActiveTexture(gl.TEXTURE1)
+		// gl.BindTexture(gl.TEXTURE_2D, texture)
+
+		// 	nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
+		// 	gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
+		// } else {
+		// 	fmt.Println(err)
+		// }
 
 		for _, entity := range entityManager.getEntitiesWithComponent(CMP_DRAWABLE) {
 			gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
@@ -113,10 +133,13 @@ func main() {
 				if err != nil {
 					texture = prevTexture
 				}
-				gl.ActiveTexture(gl.TEXTURE0)
+				gl.ActiveTexture(gl.TEXTURE0 + drawComponent.sprite.textureIx)
 				gl.BindTexture(gl.TEXTURE_2D, texture)
 
 				nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
+				gl.BindVertexArray(drawComponent.vao)
+				gl.BindBuffer(gl.ARRAY_BUFFER, drawComponent.vbo)
+				updateShaderVars(program)
 				gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
 			} else {
 				fmt.Println(err)
@@ -151,8 +174,8 @@ func initGlfw() *glfw.Window {
 func updateFPS(fpsCh <-chan float32) {
 	for fps := range fpsCh {
 		// Move cursor up and to the beginning of the line
-		fmt.Print("\033[F\033[K")
-		fmt.Printf("FPS: %f\n", fps)
-		// _ = fps
+		// fmt.Print("\033[F\033[K")
+		// fmt.Printf("FPS: %f\n", fps)
+		_ = fps
 	}
 }

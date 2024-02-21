@@ -131,7 +131,7 @@ func loadShaders() (string, string) {
 	return vertexShader, fragmentShader
 }
 
-func makeVao(points []float32) uint32 {
+func makeVao(points []float32) (uint32, uint32) {
 	// Make a Vertex Array Object (vao)
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
@@ -144,10 +144,11 @@ func makeVao(points []float32) uint32 {
 
 	gl.BufferData(gl.ARRAY_BUFFER, len(points)*FLOAT_SIZE, gl.Ptr(points), gl.STATIC_DRAW)
 
-	return vao
+	return vao, vbo
 }
 
-func setShaderVars(program uint32) ShaderConfig {
+func updateShaderVars(program uint32) ShaderConfig {
+	// these only affect the *current* vao bound to glArrayBuffer
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
 	// vec3 vertices
@@ -163,11 +164,13 @@ func setShaderVars(program uint32) ShaderConfig {
 	return ShaderConfig{vertAttrib, texCoordAttrib}
 }
 
-func loadTexture(rgba *image.RGBA) (uint32, error) {
+func loadTexture(rgba *image.RGBA, textureIx uint32) (uint32, error) {
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
-	gl.ActiveTexture(gl.TEXTURE0)
+
+	// need to bind textures before generating them
+	gl.ActiveTexture(gl.TEXTURE0 + textureIx)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)

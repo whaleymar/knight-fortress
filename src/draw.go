@@ -12,6 +12,7 @@ type cDrawable struct {
 	enum        ComponentType
 	vertices    []float32
 	vao         uint32
+	vbo         uint32
 	sprite      Sprite
 	animManager AnimationManager
 }
@@ -20,6 +21,7 @@ type Sprite struct {
 	img         *image.RGBA
 	frameHeight int
 	frameWidth  int
+	textureIx   uint32
 }
 
 type Animation struct {
@@ -37,6 +39,9 @@ type AnimationManager struct {
 
 func (comp *cDrawable) update(entity *Entity) {
 	animManager := &comp.animManager
+	if animManager.animSpeed == 0.0 { // static image
+		return
+	}
 	animManager.frameTime += DeltaTime.get()
 	if animManager.frameTime >= 1/animManager.animSpeed {
 		animManager.frameTime = 0.0
@@ -49,7 +54,7 @@ func (comp *cDrawable) getType() ComponentType {
 }
 
 func (comp *cDrawable) getTexture() (uint32, error) {
-	return loadTexture(comp.getFrame())
+	return loadTexture(comp.getFrame(), comp.sprite.textureIx)
 }
 
 func (comp *cDrawable) getFrame() *image.RGBA {
@@ -119,6 +124,17 @@ func loadImage(filename string) (*image.RGBA, error) {
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	return rgba, nil
+}
+
+func makeStaticAnimationManager() AnimationManager {
+	anim := []Animation{{0, 1}}
+	return AnimationManager{
+		anim,
+		0.0,
+		0,
+		0.0,
+		0,
+	}
 }
 
 func isTransparent(img *image.RGBA) bool {

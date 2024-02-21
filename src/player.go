@@ -35,7 +35,7 @@ func getPlayerPtr() *Entity {
 
 func makePlayerEntity() Entity {
 	vertices := squareVertices
-	vao := makeVao(vertices)
+	vao, vbo := makeVao(vertices)
 	entity := Entity{
 		0,
 		&ComponentList{},
@@ -46,6 +46,7 @@ func makePlayerEntity() Entity {
 		CMP_DRAWABLE,
 		vertices,
 		vao,
+		vbo,
 		makePlayerSprite(),
 		makePlayerAnimationManager(),
 	})
@@ -69,6 +70,7 @@ func makePlayerSprite() Sprite {
 		img,
 		SPRITE_HEIGHT_PLAYER,
 		SPRITE_WIDTH_PLAYER,
+		0, // TODO hard coded
 	}
 }
 
