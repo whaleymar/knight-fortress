@@ -1,9 +1,11 @@
 package main
 
 import (
+	"sync"
 	"time"
 )
 
+var _DELTATIME_LOCK = &sync.Mutex{}
 var DeltaTime = deltaTime{time.Now(), 0}
 
 type deltaTime struct {
@@ -12,8 +14,8 @@ type deltaTime struct {
 }
 
 func (dt *deltaTime) update() {
-	lock.Lock()
-	defer lock.Unlock()
+	_DELTATIME_LOCK.Lock()
+	defer _DELTATIME_LOCK.Unlock()
 	currentTime := time.Now()
 	dt.value = float32(currentTime.Sub(dt.previousTime).Seconds())
 	dt.previousTime = currentTime

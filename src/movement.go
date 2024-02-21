@@ -8,8 +8,10 @@ import (
 // TODO custom type
 const (
 	ANIM_IDLE = iota
-	ANIM_HMOVE
-	ANIM_VMOVE
+	ANIM_MOVE_HLEFT
+	ANIM_MOVE_HRIGHT
+	ANIM_MOVE_VUP
+	ANIM_MOVE_VDOWN
 )
 
 type cMovable struct {
@@ -57,10 +59,15 @@ func (comp *cMovable) update(entity *Entity) {
 
 	// update animation based on velocity
 	var animIx int
-	if comp.velocity[1] != 0 {
-		animIx = ANIM_VMOVE
-	} else if comp.velocity[0] != 0 {
-		animIx = ANIM_HMOVE
+	// vertical animation takes priority (eventually falling would be a thing)
+	if comp.velocity[1] > 0 {
+		animIx = ANIM_MOVE_VUP
+	} else if comp.velocity[1] < 0 {
+		animIx = ANIM_MOVE_VDOWN
+	} else if comp.velocity[0] > 0 {
+		animIx = ANIM_MOVE_HRIGHT
+	} else if comp.velocity[0] < 0 {
+		animIx = ANIM_MOVE_HLEFT
 	} else {
 		animIx = ANIM_IDLE
 	}

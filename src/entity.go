@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -18,6 +19,7 @@ type ComponentTypeList interface {
 	Component
 }
 
+// TODO thread safe entities
 type Entity struct {
 	uid        uint64
 	components ComponentManager
@@ -37,17 +39,18 @@ func (entity *Entity) getManager() ComponentManager {
 }
 
 // TODO double check that these *actually* need to be pointers
-// TODO mutex add/remove
 type EntityManager struct {
 	entities []*Entity
+	rwlock   sync.RWMutex
 }
 
+var _ENTITYMGR_LOCK = &sync.Mutex{}
 var entityManagerPtr *EntityManager
 
 func getEntityManager() *EntityManager {
 	if entityManagerPtr == nil {
-		lock.Lock() // TODO read documentation, I might need a separate lock mechanism for this
-		defer lock.Unlock()
+		_ENTITYMGR_LOCK.Lock()
+		defer _ENTITYMGR_LOCK.Unlock()
 		if entityManagerPtr == nil {
 			eMgr := EntityManager{}
 			entityManagerPtr = &eMgr
@@ -58,10 +61,14 @@ func getEntityManager() *EntityManager {
 
 func (eMgr *EntityManager) add(entity Entity) {
 	// enforce uniqueness?
+	eMgr.rwlock.Lock()
+	defer eMgr.rwlock.Unlock()
 	eMgr.entities = append(eMgr.entities, &entity)
 }
 
 func (eMgr *EntityManager) remove(uid uint64) {
+	eMgr.rwlock.Lock()
+	defer eMgr.rwlock.Unlock()
 	for i, entity := range eMgr.entities {
 		if uid == entity.uid {
 			eMgr.entities = append(eMgr.entities[:i], eMgr.entities[i+1:]...)
@@ -71,6 +78,8 @@ func (eMgr *EntityManager) remove(uid uint64) {
 }
 
 func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
+	eMgr.rwlock.RLock()
+	defer eMgr.rwlock.RUnlock()
 	for _, entity := range eMgr.entities {
 		if uid == entity.uid {
 			return entity, nil
@@ -80,6 +89,8 @@ func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
 }
 
 func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entity {
+	eMgr.rwlock.RLock()
+	defer eMgr.rwlock.RUnlock()
 	if enum == CMP_ANY {
 		return eMgr.entities
 	}

@@ -7,22 +7,24 @@ import (
 )
 
 const (
-	FILE_SPRITE_PLAYER   = "assets/player.png"
-	SPRITE_HEIGHT_PLAYER = 16
-	SPRITE_WIDTH_PLAYER  = 16
-	ANIM_HOFFSET_PLAYER  = 1
-	ANIM_VOFFSET_PLAYER  = 0
-	ANIM_HFRAMES_PLAYER  = 2
-	ANIM_VFRAMES_PLAYER  = 4
+	FILE_SPRITE_PLAYER        = "assets/player.png"
+	SPRITE_HEIGHT_PLAYER      = 16
+	SPRITE_WIDTH_PLAYER       = 16
+	ANIM_OFFSET_PLAYER_HRIGHT = 1
+	ANIM_OFFSET_PLAYER_HLEFT  = 3
+	ANIM_OFFSET_PLAYER_VDOWN  = 0
+	ANIM_OFFSET_PLAYER_VUP    = 2
+	ANIM_FRAMES_PLAYER_H      = 2
+	ANIM_FRAMES_PLAYER_V      = 4
 )
 
-var lock = &sync.Mutex{} // this is package-wide, maybe move somewhere else (god i miss namespaces) TODO
+var _PLAYER_LOCK = &sync.Mutex{}
 var playerPtr *Entity
 
 func getPlayerPtr() *Entity {
 	if playerPtr == nil {
-		lock.Lock()
-		defer lock.Unlock()
+		_PLAYER_LOCK.Lock()
+		defer _PLAYER_LOCK.Unlock()
 		if playerPtr == nil {
 			entity := makePlayerEntity()
 			playerPtr = &entity
@@ -51,7 +53,7 @@ func makePlayerEntity() Entity {
 	entity.components.add(&cMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
-		0.25,
+		0.25, // speedMax
 	})
 
 	return entity
@@ -72,21 +74,25 @@ func makePlayerSprite() Sprite {
 
 func makePlayerAnimationManager() AnimationManager {
 	// TODO magic numbers
-	idleAnim := Animation{ANIM_HOFFSET_PLAYER, 1}
-	hAnim := Animation{ANIM_HOFFSET_PLAYER, ANIM_HFRAMES_PLAYER}
-	vAnim := Animation{ANIM_VOFFSET_PLAYER, ANIM_VFRAMES_PLAYER}
+	idleAnim := Animation{ANIM_OFFSET_PLAYER_VDOWN, 1}
+	hAnimLeft := Animation{ANIM_OFFSET_PLAYER_HLEFT, ANIM_FRAMES_PLAYER_H}
+	hAnimRight := Animation{ANIM_OFFSET_PLAYER_HRIGHT, ANIM_FRAMES_PLAYER_H}
+	vAnimUp := Animation{ANIM_OFFSET_PLAYER_VUP, ANIM_FRAMES_PLAYER_V}
+	vAnimDown := Animation{ANIM_OFFSET_PLAYER_VDOWN, ANIM_FRAMES_PLAYER_V}
 
 	mgr := AnimationManager{
 		nil,
 		4.0, // anim speed (fps)
 		0,   // frame
-		0.0, // frmae time
+		0.0, // frame time
 		0,   // ix
 	}
 
 	mgr.anims = append(mgr.anims, idleAnim)
-	mgr.anims = append(mgr.anims, hAnim)
-	mgr.anims = append(mgr.anims, vAnim)
+	mgr.anims = append(mgr.anims, hAnimLeft)
+	mgr.anims = append(mgr.anims, hAnimRight)
+	mgr.anims = append(mgr.anims, vAnimUp)
+	mgr.anims = append(mgr.anims, vAnimDown)
 
 	return mgr
 }

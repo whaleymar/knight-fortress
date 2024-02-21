@@ -22,8 +22,8 @@ const (
 	windowHeight = 720
 	windowTitle  = "Gaming"
 
-	VERTEX_FILE   = "src/vertex.glsl"
-	FRAGMENT_FILE = "src/fragment.glsl"
+	VERTEX_FILE   = "shader/vertex.glsl"
+	FRAGMENT_FILE = "shader/fragment.glsl"
 
 	STRIDE_SIZE = 5
 	FLOAT_SIZE  = 4
