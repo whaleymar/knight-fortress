@@ -15,9 +15,19 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+const pixelsPerTexel = 4
+
 type ShaderConfig struct {
 	vert             uint32
 	vertTextureCoord uint32
+}
+
+type VAO struct {
+	handle uint32
+}
+
+type VBO struct {
+	handle uint32
 }
 
 func initOpenGL() (uint32, error) {
@@ -131,24 +141,33 @@ func loadShaders() (string, string) {
 	return vertexShader, fragmentShader
 }
 
-func makeVao(points []float32) (uint32, uint32) {
-	// Make a Vertex Array Object (vao)
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
+func makeVao() VAO {
+	var vao VAO
+	gl.GenVertexArrays(1, &vao.handle)
+	return vao
+}
 
-	// allocate Vertex Buffer Object (vbo) and pass pointer to vertex data
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+func (vao VAO) bind() {
+	gl.BindVertexArray(vao.handle)
+}
 
-	gl.BufferData(gl.ARRAY_BUFFER, len(points)*FLOAT_SIZE, gl.Ptr(points), gl.STATIC_DRAW)
+func makeVbo() VBO {
+	var vbo VBO
+	gl.GenBuffers(1, &vbo.handle)
+	return vbo
+}
 
-	return vao, vbo
+func (vbo VBO) bind() {
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo.handle)
+}
+
+func (vbo VBO) buffer(data []float32) {
+	gl.BufferData(gl.ARRAY_BUFFER, len(data)*FLOAT_SIZE, gl.Ptr(data), gl.STATIC_DRAW)
 }
 
 func updateShaderVars(program uint32) ShaderConfig {
-	// these only affect the *current* vao bound to glArrayBuffer
+	// this only affects the *current* vao bound to glArrayBuffer
+
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
 	// vec3 vertices
@@ -213,6 +232,32 @@ func makeSquareVertices(pixelWidth, pixelHeight int) []float32 {
 		fWidth, 0.0, 0.0, 1.0, 1.0,
 		0.0, 0.0, 0.0, 0.0, 1.0,
 	}
+}
+
+func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMax float32) []float32 {
+	fWidth := float32(pixelWidth)
+	fHeight := float32(pixelHeight)
+
+	return []float32{
+		0.0, fHeight, 0.0, xMin, yMin,
+		fWidth, fHeight, 0.0, xMax, yMin,
+		0.0, 0.0, 0.0, xMin, yMax,
+		fWidth, fHeight, 0.0, xMax, yMin,
+		fWidth, 0.0, 0.0, xMax, yMax,
+		0.0, 0.0, 0.0, xMin, yMax,
+	}
+}
+
+func scaleDepth(vertices []float32, scalar float32) []float32 {
+	newVertices := vertices
+	for i := 0; i < len(vertices); i++ {
+		if i%5 == 2 {
+			newVertices[i] += scalar
+		}
+	}
+	// fmt.Println(vertices)
+	// fmt.Println(newVertices)
+	return newVertices
 }
 
 var screenVertices = []float32{

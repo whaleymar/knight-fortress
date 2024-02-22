@@ -71,7 +71,7 @@ func (comp *cMovable) update(entity *Entity) {
 	} else {
 		animIx = ANIM_IDLE
 	}
-	drawComponent.animManager.setAnimation(animIx)
+	drawComponent.sprite.animManager.setAnimation(animIx)
 }
 
 func (comp *cMovable) getType() ComponentType {

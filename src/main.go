@@ -1,7 +1,10 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
+
 	// "time"
 
 	// "image/png"
@@ -15,6 +18,11 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
+
+// unused import error is probably the stupidest thing I've ever seen
+var _ = fmt.Println
+var _ = cmp.Compare(1, 1)
+var _ = slices.Min([]int{1})
 
 const (
 	windowWidth = 1280
@@ -63,16 +71,13 @@ func main() {
 	gl.Uniform3fv(offsetUniform, 1, &offset[0])
 
 	initControls(window)
+	initMainTexture()
 
 	// init player and entity manager
 	entityManager := getEntityManager()
-	entityManager.add(*getPlayerPtr()) // player pointer HAS to be initted before setShaderVars runs - something about making a VAO?
 
+	entityManager.add(*getPlayerPtr())
 	entityManager.add(makeLevelEntity())
-	// levelEntity := makeLevelEntity()
-	// _ = levelEntity
-
-	_ = updateShaderVars(program)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -82,6 +87,7 @@ func main() {
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.ClearColor(COLOR_CLEAR_R, COLOR_CLEAR_G, COLOR_CLEAR_B, COLOR_CLEAR_A)
+	// gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 
 	// Time
 	millis := gl.GetUniformLocation(program, gl.Str("millis\x00"))
@@ -105,46 +111,26 @@ func main() {
 		// Render
 		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
 
-		// if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, &levelEntity); err == nil {
-		// 	drawComponent := *tmp
-		// texture, err = drawComponent.getTexture()
-		// if err != nil {
-		// 	_ = texture
-		// }
-		// gl.ActiveTexture(gl.TEXTURE1)
-		// gl.BindTexture(gl.TEXTURE_2D, texture)
+		texture = getTextureManager().getTextureHandle(TEX_MAIN)
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		// 	nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
-		// 	gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
-		// } else {
-		// 	fmt.Println(err)
-		// }
-
-		for _, entity := range entityManager.getEntitiesWithComponent(CMP_DRAWABLE) {
+		// have to sort by depth so things get blended correctly
+		drawableEntities := entityManager.getEntitiesWithComponent(CMP_DRAWABLE)
+		slices.SortFunc(drawableEntities, func(e1, e2 *Entity) int {
+			return cmp.Compare(e1.getPosition().Z(), e2.getPosition().Z())
+		})
+		for _, entity := range drawableEntities {
 			gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
+			drawComponent := *getComponentUnsafe[*cDrawable](CMP_DRAWABLE, entity)
 
-			// bind `texture` to texture uniform at index 0
-			prevTexture := texture // this might fail on frame 0
-			var drawComponent *cDrawable
-			if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err == nil {
-				drawComponent = *tmp
-				// saveImage(drawComponent.getFrame(), fmt.Sprintf("tmp/test%f", glfw.GetTime()))
-				texture, err = drawComponent.getTexture()
-				if err != nil {
-					texture = prevTexture
-				}
-				gl.ActiveTexture(gl.TEXTURE0 + drawComponent.sprite.textureIx)
-				gl.BindTexture(gl.TEXTURE_2D, texture)
+			nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
+			drawComponent.vao.bind()
+			drawComponent.vbo.bind()
+			drawComponent.vbo.buffer(drawComponent.vertices)
 
-				nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
-				gl.BindVertexArray(drawComponent.vao)
-				gl.BindBuffer(gl.ARRAY_BUFFER, drawComponent.vbo)
-				updateShaderVars(program)
-				gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
-			} else {
-				fmt.Println(err)
-			}
-
+			updateShaderVars(program)
+			gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
 		}
 
 		// Maintenance

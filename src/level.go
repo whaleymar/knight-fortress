@@ -5,42 +5,37 @@ import (
 )
 
 const (
-	FILE_SPRITE_LEVEL = "assets/newbarktown.png"
+	SPRITE_HEIGHT_LEVEL = 225
+	SPRITE_WIDTH_LEVEL  = 250
 )
 
 // eventually this will take a level config file which contains all the component data
 func makeLevelEntity() Entity {
-	vertices := screenVertices
-	vao, vbo := makeVao(vertices)
+	// vertices := scaleDepth(screenVertices, -0.1)
 	entity := Entity{
 		1, // TODO hard coded id
 		&ComponentList{},
-		mgl32.Vec3{},
+		mgl32.Vec3{0.0, 0.0, DEPTH_BACKGROUND},
 	}
 
 	entity.components.add(&cDrawable{
 		CMP_DRAWABLE,
-		vertices,
-		vao,
-		vbo,
-		makeLevelSprite(),
-		makeStaticAnimationManager(),
+		screenVertices,
+		makeVao(),
+		makeVbo(),
+		makeLevelSprite(makeStaticAnimationManager()),
+		TEX_MAIN,
 	})
 
 	return entity
 
 }
 
-func makeLevelSprite() Sprite {
-	img, err := loadImage(FILE_SPRITE_LEVEL)
-	if err != nil {
-		panic(err)
-	}
+func makeLevelSprite(animMgr AnimationManager) Sprite {
 	return Sprite{
-		img,
-		img.Bounds().Max.Y,
-		img.Bounds().Max.X,
-		1, // TODO hard coded
+		mgl32.Vec3{0, 64, 0},
+		[2]int{SPRITE_WIDTH_LEVEL, SPRITE_HEIGHT_LEVEL},
+		animMgr,
 	}
 
 }

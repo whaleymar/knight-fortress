@@ -12,8 +12,8 @@ in vec2 vertTexCoord;
 out vec2 fragTexCoord;
 
 void main() {
-    vec4 totalOffset = vec4(offset, 0.) + vec4(1., 1., 0., 0.);
-    // gl_Position = projection * camera * vec4(vert, 1.);
+    // only use x and y from offset because 2D
+    vec4 totalOffset = vec4(offset.x, offset.y, 0., 0.) + vec4(1., 1., 0., 0.); // my opengl has -1,-1 as the bottom left of the screen
     gl_Position = projection * camera * vec4(vert, 1.) + totalOffset;
     
     fragTexCoord = vertTexCoord;

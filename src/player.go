@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	FILE_SPRITE_PLAYER        = "assets/player.png"
 	SPRITE_HEIGHT_PLAYER      = 16
 	SPRITE_WIDTH_PLAYER       = 16
 	ANIM_OFFSET_PLAYER_HRIGHT = 1
@@ -34,21 +33,20 @@ func getPlayerPtr() *Entity {
 }
 
 func makePlayerEntity() Entity {
-	vertices := squareVertices
-	vao, vbo := makeVao(vertices)
 	entity := Entity{
 		0,
 		&ComponentList{},
-		mgl32.Vec3{},
+		mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER},
 	}
 
 	entity.components.add(&cDrawable{
 		CMP_DRAWABLE,
-		vertices,
-		vao,
-		vbo,
-		makePlayerSprite(),
-		makePlayerAnimationManager(),
+		squareVertices,
+		// scaleDepth(squareVertices, 0.1),
+		makeVao(),
+		makeVbo(),
+		makePlayerSprite(makePlayerAnimationManager()),
+		TEX_MAIN,
 	})
 
 	entity.components.add(&cMovable{
@@ -60,27 +58,22 @@ func makePlayerEntity() Entity {
 	return entity
 }
 
-func makePlayerSprite() Sprite {
-	img, err := loadImage(FILE_SPRITE_PLAYER)
-	if err != nil {
-		panic(err)
-	}
+func makePlayerSprite(animMgr AnimationManager) Sprite {
 
 	return Sprite{
-		img,
-		SPRITE_HEIGHT_PLAYER,
-		SPRITE_WIDTH_PLAYER,
-		0, // TODO hard coded
+		mgl32.Vec3{0, 0, 0}, // TODO hard coded
+		[2]int{SPRITE_WIDTH_PLAYER, SPRITE_HEIGHT_PLAYER},
+		animMgr,
 	}
 }
 
 func makePlayerAnimationManager() AnimationManager {
 	// TODO magic numbers
-	idleAnim := Animation{ANIM_OFFSET_PLAYER_VDOWN, 1}
-	hAnimLeft := Animation{ANIM_OFFSET_PLAYER_HLEFT, ANIM_FRAMES_PLAYER_H}
-	hAnimRight := Animation{ANIM_OFFSET_PLAYER_HRIGHT, ANIM_FRAMES_PLAYER_H}
-	vAnimUp := Animation{ANIM_OFFSET_PLAYER_VUP, ANIM_FRAMES_PLAYER_V}
-	vAnimDown := Animation{ANIM_OFFSET_PLAYER_VDOWN, ANIM_FRAMES_PLAYER_V}
+	idleAnim := makeAnimation(1, ANIM_OFFSET_PLAYER_VDOWN, 1)
+	hAnimLeft := makeAnimation(0, ANIM_OFFSET_PLAYER_HLEFT, ANIM_FRAMES_PLAYER_H)
+	hAnimRight := makeAnimation(0, ANIM_OFFSET_PLAYER_HRIGHT, ANIM_FRAMES_PLAYER_H)
+	vAnimUp := makeAnimation(0, ANIM_OFFSET_PLAYER_VUP, ANIM_FRAMES_PLAYER_V)
+	vAnimDown := makeAnimation(0, ANIM_OFFSET_PLAYER_VDOWN, ANIM_FRAMES_PLAYER_V)
 
 	mgr := AnimationManager{
 		nil,
@@ -97,4 +90,11 @@ func makePlayerAnimationManager() AnimationManager {
 	mgr.anims = append(mgr.anims, vAnimDown)
 
 	return mgr
+}
+
+func makeAnimation(offsetX, offsetY, frameCount int) Animation {
+	return Animation{
+		[2]int{offsetX, offsetY},
+		frameCount,
+	}
 }

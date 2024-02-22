@@ -38,6 +38,10 @@ func (entity *Entity) getManager() ComponentManager {
 	return entity.components
 }
 
+func (entity *Entity) String() string {
+	return string(fmt.Sprint(entity.uid))
+}
+
 // TODO double check that these *actually* need to be pointers
 type EntityManager struct {
 	entities []*Entity
@@ -134,6 +138,16 @@ func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, 
 		return nil, fmt.Errorf("No %d component found", enum)
 	}
 	return &comp, nil
+}
+
+func getComponentUnsafe[T ComponentTypeList](enum ComponentType, entity *Entity) *T {
+	// use this for components fetched with getEntitiesWithComponent()
+	compMgr := entity.getManager()
+	compInterface, err := compMgr.get(enum)
+	_ = err
+	comp, ok := (*compInterface).(T)
+	_ = ok
+	return &comp
 }
 
 func (components *ComponentList) add(comp Component) {

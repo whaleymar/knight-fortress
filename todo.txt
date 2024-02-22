@@ -1,15 +1,16 @@
-load entire texture atlas as one texture and use shader uniforms to index
-get background texture working
-
-stringer code generation for enum
 i might be fucking myself passing around so many pointers once i start multi threading
 
-golang debugger (erroring)
-entity component system with observer pattern
-    - for events
+short term:
+- clean up code (especially for textures)
+- camera entity
+- physics/collision component(s?)
+- gravity
+- jumping
+- unloading entities (mainly need to free opengl vars)
+- platforms
+- text rendering
 
-basic frame transformations (flip, rotate 90/180/270 degrees)
-collision -> gravity -> jumping
-background
-basic level
-text
+long term:
+- event system
+- entity config files + loading
+- parallel everything
