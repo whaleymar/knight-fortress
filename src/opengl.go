@@ -248,18 +248,6 @@ func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMa
 	}
 }
 
-func scaleDepth(vertices []float32, scalar float32) []float32 {
-	newVertices := vertices
-	for i := 0; i < len(vertices); i++ {
-		if i%5 == 2 {
-			newVertices[i] += scalar
-		}
-	}
-	// fmt.Println(vertices)
-	// fmt.Println(newVertices)
-	return newVertices
-}
-
 var screenVertices = []float32{
 	0.0, float32(windowHeight), 0.0, 0.0, 0.0,
 	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
@@ -269,7 +257,4 @@ var screenVertices = []float32{
 	0.0, 0.0, 0.0, 0.0, 1.0,
 }
 
-var (
-	charDim = 64
-)
-var squareVertices []float32 = makeSquareVertices(charDim, charDim)
+var squareVertices []float32 = makeSquareVertices(64, 64) // placeholder for cDrawable init

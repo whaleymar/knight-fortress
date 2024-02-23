@@ -6,9 +6,6 @@ import (
 	"image/draw"
 	"os"
 	"sync"
-
-	"github.com/go-gl/mathgl/mgl32"
-	// "github.com/go-gl/glfw/v3.3/glfw"
 )
 
 // define depth order for sorting
@@ -18,19 +15,19 @@ const (
 	DEPTH_PLAYER
 )
 
-// TODO mutex + any struct members should be accessed through cDrawable methods
 type cDrawable struct {
-	enum      ComponentType
-	vertices  []float32
-	vao       VAO
-	vbo       VBO
-	sprite    Sprite
-	textureIx TextureSlot
-	// rwlock    *sync.RWMutex
+	enum             ComponentType
+	vertices         []float32
+	vao              VAO
+	vbo              VBO
+	sprite           Sprite
+	textureIx        TextureSlot
+	rwlock           *sync.RWMutex
+	isUvUpdateNeeded bool
 }
 
 type Sprite struct { // spritesheet
-	sheetPosition mgl32.Vec3 // stores texture array position + x,y position in texture atlas
+	sheetPosition [3]int // stores texture array position + x,y position in texture atlas
 	frameSize     [2]int
 	animManager   AnimationManager
 }
@@ -56,25 +53,26 @@ func (comp *cDrawable) update(entity *Entity) {
 		if animManager.frameTime >= 1/animManager.animSpeed {
 			animManager.frameTime = 0.0
 			animManager.frame = (animManager.frame + 1) % animManager.getAnimation().frameCount
+			comp.isUvUpdateNeeded = true
 		}
 	}
 
 	// update UV
-	// todo these casts are so ugly
-	// TODO methods for these so I don't go insane
-	// TODO only do once for static animation
-	var xMin, xMax, yMin, yMax float32
-	sheetSizeX, sheetSizeY := getTextureManager().getTextureSize(comp.textureIx, 0) // TODO hard coded array Index
+	if comp.isUvUpdateNeeded {
+		var xMin, xMax, yMin, yMax float32
+		sheetSizeX, sheetSizeY := getTextureManager().getTextureSize(comp.textureIx, 0) // TODO hard coded array Index
 
-	pixelOffset := comp.sprite.sheetPosition.X() + float32(comp.sprite.frameSize[0]*(comp.sprite.animManager.getAnimation().textureOffset[0]+comp.sprite.animManager.frame))
-	xMin = pixelOffset / float32(sheetSizeX)
-	xMax = (pixelOffset + float32(comp.sprite.frameSize[0])) / float32(sheetSizeX)
+		pixelOffset := float32(comp.sprite.sheetPosition[0] + comp.sprite.frameSize[0]*(comp.sprite.animManager.getAnimation().textureOffset[0]+comp.sprite.animManager.frame))
+		xMin = pixelOffset / sheetSizeX
+		xMax = (pixelOffset + float32(comp.sprite.frameSize[0])) / sheetSizeX
 
-	pixelOffset = comp.sprite.sheetPosition.Y() + float32(comp.sprite.frameSize[1]*comp.sprite.animManager.getAnimation().textureOffset[1])
-	yMin = pixelOffset / float32(sheetSizeY)
-	yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / float32(sheetSizeY)
+		pixelOffset = float32(comp.sprite.sheetPosition[1] + comp.sprite.frameSize[1]*comp.sprite.animManager.getAnimation().textureOffset[1])
+		yMin = pixelOffset / sheetSizeY
+		yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / sheetSizeY
 
-	comp.vertices = scaleDepth(makeSquareVerticesWithUV(comp.sprite.frameSize[0]*pixelsPerTexel, comp.sprite.frameSize[1]*pixelsPerTexel, xMin, xMax, yMin, yMax), 0.2)
+		comp.vertices = makeSquareVerticesWithUV(comp.sprite.frameSize[0]*pixelsPerTexel, comp.sprite.frameSize[1]*pixelsPerTexel, xMin, xMax, yMin, yMax)
+	}
+	comp.isUvUpdateNeeded = false
 }
 
 func (comp *cDrawable) getType() ComponentType {
@@ -82,32 +80,35 @@ func (comp *cDrawable) getType() ComponentType {
 }
 
 func (comp *cDrawable) getAnimation() Animation {
-	// comp.rwlock.RLock()
-	// defer comp.rwlock.RUnlock()
+	comp.rwlock.RLock()
+	defer comp.rwlock.RUnlock()
 
 	return comp.sprite.animManager.getAnimation()
 }
 
 func (comp *cDrawable) setAnimation(animIx AnimationIndex) {
-	// comp.rwlock.Lock()
-	// defer comp.rwlock.Unlock()
+	comp.rwlock.Lock()
+	defer comp.rwlock.Unlock()
 
-	comp.sprite.animManager.setAnimation(animIx)
+	if comp.sprite.animManager.setAnimation(animIx) {
+		comp.isUvUpdateNeeded = true
+	}
 }
 
 func (animManager *AnimationManager) getAnimation() Animation {
 	return animManager.anims[animManager.animIx]
 }
 
-func (animManager *AnimationManager) setAnimation(animIx AnimationIndex) {
+func (animManager *AnimationManager) setAnimation(animIx AnimationIndex) bool {
 	if animIx == animManager.animIx {
-		return
+		return false
 	} else if int(animIx) >= len(animManager.anims) {
-		return
+		return false
 	}
 	animManager.animIx = animIx
 	animManager.frame = 0
 	animManager.frameTime = 0.0
+	return true
 }
 
 func loadImage(filename string) (*image.RGBA, error) {

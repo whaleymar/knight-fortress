@@ -42,18 +42,18 @@ func makePlayerEntity() Entity {
 		0,
 		&ComponentList{},
 		mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER},
-		// &sync.RWMutex{},
+		&sync.RWMutex{},
 	}
 
 	entity.components.add(&cDrawable{
 		CMP_DRAWABLE,
 		squareVertices,
-		// scaleDepth(squareVertices, 0.1),
 		makeVao(),
 		makeVbo(),
 		makePlayerSprite(makePlayerAnimationManager()),
 		TEX_MAIN,
-		// &sync.RWMutex{},
+		&sync.RWMutex{},
+		true, // isUvUpdateNeeded
 	})
 
 	entity.components.add(&cMovable{
@@ -69,7 +69,7 @@ func makePlayerEntity() Entity {
 func makePlayerSprite(animMgr AnimationManager) Sprite {
 
 	return Sprite{
-		mgl32.Vec3{SPRITE_LOC_PLAYER_X, SPRITE_LOC_PLAYER_Y, SPRITE_LOC_PLAYER_Z},
+		[3]int{SPRITE_LOC_PLAYER_X, SPRITE_LOC_PLAYER_Y, SPRITE_LOC_PLAYER_Z},
 		[2]int{SPRITE_WIDTH_PLAYER, SPRITE_HEIGHT_PLAYER},
 		animMgr,
 	}

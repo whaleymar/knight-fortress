@@ -23,18 +23,18 @@ type Entity struct {
 	uid        uint64
 	components ComponentManager
 	position   mgl32.Vec3
-	// rwlock     *sync.RWMutex
+	rwlock     *sync.RWMutex
 }
 
 func (entity *Entity) getPosition() mgl32.Vec3 {
-	// entity.rwlock.RLock()
-	// defer entity.rwlock.RUnlock()
+	entity.rwlock.RLock()
+	defer entity.rwlock.RUnlock()
 	return entity.position
 }
 
 func (entity *Entity) setPosition(position mgl32.Vec3) {
-	// entity.rwlock.Lock()
-	// defer entity.rwlock.Unlock()
+	entity.rwlock.Lock()
+	defer entity.rwlock.Unlock()
 	entity.position = position
 }
 
@@ -46,7 +46,6 @@ func (entity *Entity) String() string {
 	return string(fmt.Sprint(entity.uid))
 }
 
-// TODO double check that these *actually* need to be pointers
 type EntityManager struct {
 	entities []*Entity
 	rwlock   sync.RWMutex

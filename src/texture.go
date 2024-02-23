@@ -112,15 +112,16 @@ func (texMgr *TextureManager) getTextureHandle(ix TextureSlot) uint32 {
 	return texMgr.textureHandles[ix]
 }
 
-func (texMgr *TextureManager) getTextureSize(slotIx TextureSlot, arrayIx int) (int, int) {
+func (texMgr *TextureManager) getTextureSize(slotIx TextureSlot, arrayIx int) (float32, float32) {
 	rect := texMgr.textureArrays[slotIx].sheets[arrayIx].Bounds()
-	return rect.Max.X, rect.Max.Y
+	return float32(rect.Max.X), float32(rect.Max.Y)
 }
 
-// TODO
-// func (texMgr *TextureManager) free(texArrayId int) {
-//
-// }
+func (texMgr *TextureManager) free(textureIx TextureSlot) {
+	handle := texMgr.getTextureHandle(textureIx)
+	gl.DeleteTextures(1, &handle)
+	texMgr.allocMask[textureIx] = false
+}
 
 func makeTextureArray(arraySize [3]uint32) TextureArray {
 	return TextureArray{
