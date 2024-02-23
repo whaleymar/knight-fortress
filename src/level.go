@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -13,9 +15,10 @@ const (
 func makeLevelEntity() Entity {
 	// vertices := scaleDepth(screenVertices, -0.1)
 	entity := Entity{
-		1, // TODO hard coded id
+		0,
 		&ComponentList{},
 		mgl32.Vec3{0.0, 0.0, DEPTH_BACKGROUND},
+		// &sync.RWMutex{},
 	}
 
 	entity.components.add(&cDrawable{
@@ -25,6 +28,7 @@ func makeLevelEntity() Entity {
 		makeVbo(),
 		makeLevelSprite(makeStaticAnimationManager()),
 		TEX_MAIN,
+		// &sync.RWMutex{},
 	})
 
 	return entity

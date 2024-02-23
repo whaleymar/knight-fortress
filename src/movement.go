@@ -4,52 +4,31 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-// movement based animations here: fall, jump
-// TODO custom type
+// movement based animations here: fall, jump, crouch
+type AnimationIndex int
+
 const (
-	ANIM_IDLE = iota
+	ANIM_IDLE AnimationIndex = iota
 	ANIM_MOVE_HLEFT
 	ANIM_MOVE_HRIGHT
 	ANIM_MOVE_VUP
 	ANIM_MOVE_VDOWN
 )
 
+const (
+	PHYSICS_FRICTION_COEF = float32(0.5)
+	PHYSICS_MIN_SPEED     = float32(0.000001)
+)
+
 type cMovable struct {
-	velocity mgl32.Vec3
-	accel    mgl32.Vec3
-	speedMax float32
+	velocity         mgl32.Vec3
+	accel            mgl32.Vec3
+	speedMax         float32
+	isFrictionActive bool
 }
 
 func (comp *cMovable) update(entity *Entity) {
-	// TODO magic numbers
-	// also code kinda disgusting
-
-	speedMax := comp.speedMax * DeltaTime.get()
-	velocityMax := float32(speedMax)
-	velocityMin := float32(-speedMax)
-	zero1d := float32(0)
-	// zero2d := mgl32.Vec2{0,0}
-	cutoffSpeed := float32(speedMax / 20.0)
-	frictionCoefficient := float32(0.5)
-
-	for i := 0; i < 2; i++ {
-		if comp.accel[i] != zero1d {
-			comp.velocity[i] += comp.accel[i]
-			if comp.velocity[i] > velocityMax {
-				comp.velocity[i] = velocityMax
-			} else if comp.velocity[i] < velocityMin {
-				comp.velocity[i] = velocityMin
-			}
-		} else if comp.velocity[i] != zero1d {
-			comp.velocity[i] *= frictionCoefficient
-			if (comp.velocity[i] > zero1d && comp.velocity[i] < cutoffSpeed) || (comp.velocity[i] < zero1d && comp.velocity[i] > -cutoffSpeed) {
-				comp.velocity[i] = zero1d
-			}
-		}
-	}
-
-	entity.setPosition(entity.getPosition().Add(comp.velocity))
-
+	comp.updateKinematics(entity)
 	var drawComponent *cDrawable
 	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err != nil {
 		return
@@ -58,22 +37,48 @@ func (comp *cMovable) update(entity *Entity) {
 	}
 
 	// update animation based on velocity
-	var animIx int
 	// vertical animation takes priority (eventually falling would be a thing)
+	var animType AnimationIndex
 	if comp.velocity[1] > 0 {
-		animIx = ANIM_MOVE_VUP
+		animType = ANIM_MOVE_VUP
 	} else if comp.velocity[1] < 0 {
-		animIx = ANIM_MOVE_VDOWN
+		animType = ANIM_MOVE_VDOWN
 	} else if comp.velocity[0] > 0 {
-		animIx = ANIM_MOVE_HRIGHT
+		animType = ANIM_MOVE_HRIGHT
 	} else if comp.velocity[0] < 0 {
-		animIx = ANIM_MOVE_HLEFT
+		animType = ANIM_MOVE_HLEFT
 	} else {
-		animIx = ANIM_IDLE
+		animType = ANIM_IDLE
 	}
-	drawComponent.sprite.animManager.setAnimation(animIx)
+	drawComponent.setAnimation(animType)
 }
 
 func (comp *cMovable) getType() ComponentType {
 	return CMP_MOVABLE
+}
+
+func (comp *cMovable) updateKinematics(entity *Entity) {
+	speedMax := comp.speedMax
+	velocityMax := float32(speedMax)
+	velocityMin := float32(-speedMax)
+	zerof := float32(0)
+
+	// if player is not accelerating, apply friction
+	for i := 0; i < 2; i++ {
+		if comp.accel[i] != zerof {
+			comp.velocity[i] += comp.accel[i]
+			comp.velocity[i] = clamp(comp.velocity[i], velocityMin, velocityMax)
+		} else if comp.velocity[i] != zerof && comp.isFrictionActive {
+			comp.velocity[i] *= PHYSICS_FRICTION_COEF
+			if mgl32.Abs(comp.velocity[i]) < PHYSICS_MIN_SPEED {
+				comp.velocity[i] = zerof
+			}
+		}
+	}
+
+	entity.setPosition(
+		entity.getPosition().Add(
+			comp.velocity.Mul(
+				DeltaTime.get())))
+
 }

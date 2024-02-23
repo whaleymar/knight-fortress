@@ -5,9 +5,9 @@ import (
 	// "github.com/go-gl/mathgl/mgl32"
 )
 
-// type cControllable struct { // this is coupled to cMovable
-// 	acceleration mgl32.Vec2
-// }
+const (
+	ACCEL_PLAYER_DEFAULT = 0.1
+)
 
 func initControls(window *glfw.Window) {
 	window.SetKeyCallback(playerControlsCallback)
@@ -20,9 +20,10 @@ func playerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 
 	var accel float32
 	if action == glfw.Release {
-		accel = -0.05 // TODO magic number
+		// sets accel in that direction to zero
+		accel = -ACCEL_PLAYER_DEFAULT
 	} else {
-		accel = 0.05
+		accel = ACCEL_PLAYER_DEFAULT
 	}
 
 	player := getPlayerPtr()

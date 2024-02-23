@@ -2,6 +2,9 @@ i might be fucking myself passing around so many pointers once i start multi thr
 
 short term:
 - clean up code (especially for textures)
+    - 2d texture array
+    - todos
+    - organize code into folders
 - camera entity
 - physics/collision component(s?)
 - gravity
@@ -12,5 +15,5 @@ short term:
 
 long term:
 - event system
-- entity config files + loading
+- entity config files + hot reloading
 - parallel everything

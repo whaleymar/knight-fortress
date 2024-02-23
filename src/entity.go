@@ -19,18 +19,22 @@ type ComponentTypeList interface {
 	Component
 }
 
-// TODO thread safe entities
 type Entity struct {
 	uid        uint64
 	components ComponentManager
 	position   mgl32.Vec3
+	// rwlock     *sync.RWMutex
 }
 
 func (entity *Entity) getPosition() mgl32.Vec3 {
+	// entity.rwlock.RLock()
+	// defer entity.rwlock.RUnlock()
 	return entity.position
 }
 
 func (entity *Entity) setPosition(position mgl32.Vec3) {
+	// entity.rwlock.Lock()
+	// defer entity.rwlock.Unlock()
 	entity.position = position
 }
 
@@ -46,6 +50,7 @@ func (entity *Entity) String() string {
 type EntityManager struct {
 	entities []*Entity
 	rwlock   sync.RWMutex
+	nextId   uint64
 }
 
 var _ENTITYMGR_LOCK = &sync.Mutex{}
@@ -67,12 +72,16 @@ func (eMgr *EntityManager) add(entity Entity) {
 	// enforce uniqueness?
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
+
+	entity.uid = eMgr.nextId
+	eMgr.nextId++
 	eMgr.entities = append(eMgr.entities, &entity)
 }
 
 func (eMgr *EntityManager) remove(uid uint64) {
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
+
 	for i, entity := range eMgr.entities {
 		if uid == entity.uid {
 			eMgr.entities = append(eMgr.entities[:i], eMgr.entities[i+1:]...)
@@ -84,6 +93,7 @@ func (eMgr *EntityManager) remove(uid uint64) {
 func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
 	eMgr.rwlock.RLock()
 	defer eMgr.rwlock.RUnlock()
+
 	for _, entity := range eMgr.entities {
 		if uid == entity.uid {
 			return entity, nil
@@ -95,6 +105,7 @@ func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
 func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entity {
 	eMgr.rwlock.RLock()
 	defer eMgr.rwlock.RUnlock()
+
 	if enum == CMP_ANY {
 		return eMgr.entities
 	}
@@ -151,8 +162,6 @@ func getComponentUnsafe[T ComponentTypeList](enum ComponentType, entity *Entity)
 }
 
 func (components *ComponentList) add(comp Component) {
-	// TODO should sort array by enum for faster lookup and removal
-	// should I search for a matching component type and replace? slow but safer
 	components.components = append(components.components, comp)
 }
 
@@ -162,7 +171,7 @@ func (components *ComponentList) get(enum ComponentType) (*Component, error) {
 			return &components.components[i], nil
 		}
 	}
-	return nil, fmt.Errorf("Component not found: %d", enum) // TODO after string code gen change this
+	return nil, fmt.Errorf("Component not found: %d", enum)
 }
 
 func (components *ComponentList) remove(enum ComponentType) error {

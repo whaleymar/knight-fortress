@@ -76,8 +76,8 @@ func main() {
 	// init player and entity manager
 	entityManager := getEntityManager()
 
-	entityManager.add(*getPlayerPtr())
-	entityManager.add(makeLevelEntity())
+	// entityManager.add(*getPlayerPtr())
+	// entityManager.add(makeLevelEntity())
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))

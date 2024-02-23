@@ -7,6 +7,9 @@ import (
 )
 
 const (
+	SPRITE_LOC_PLAYER_X       = 0
+	SPRITE_LOC_PLAYER_Y       = 0
+	SPRITE_LOC_PLAYER_Z       = 0
 	SPRITE_HEIGHT_PLAYER      = 16
 	SPRITE_WIDTH_PLAYER       = 16
 	ANIM_OFFSET_PLAYER_HRIGHT = 1
@@ -15,6 +18,8 @@ const (
 	ANIM_OFFSET_PLAYER_VUP    = 2
 	ANIM_FRAMES_PLAYER_H      = 2
 	ANIM_FRAMES_PLAYER_V      = 4
+	ANIM_FPS_DEFAULT          = 4.0
+	PHYSICS_PLAYER_SPEEDMAX   = 0.5
 )
 
 var _PLAYER_LOCK = &sync.Mutex{}
@@ -37,6 +42,7 @@ func makePlayerEntity() Entity {
 		0,
 		&ComponentList{},
 		mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER},
+		// &sync.RWMutex{},
 	}
 
 	entity.components.add(&cDrawable{
@@ -47,12 +53,14 @@ func makePlayerEntity() Entity {
 		makeVbo(),
 		makePlayerSprite(makePlayerAnimationManager()),
 		TEX_MAIN,
+		// &sync.RWMutex{},
 	})
 
 	entity.components.add(&cMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
-		0.25, // speedMax
+		PHYSICS_PLAYER_SPEEDMAX,
+		true, // frictionActive
 	})
 
 	return entity
@@ -61,14 +69,13 @@ func makePlayerEntity() Entity {
 func makePlayerSprite(animMgr AnimationManager) Sprite {
 
 	return Sprite{
-		mgl32.Vec3{0, 0, 0}, // TODO hard coded
+		mgl32.Vec3{SPRITE_LOC_PLAYER_X, SPRITE_LOC_PLAYER_Y, SPRITE_LOC_PLAYER_Z},
 		[2]int{SPRITE_WIDTH_PLAYER, SPRITE_HEIGHT_PLAYER},
 		animMgr,
 	}
 }
 
 func makePlayerAnimationManager() AnimationManager {
-	// TODO magic numbers
 	idleAnim := makeAnimation(1, ANIM_OFFSET_PLAYER_VDOWN, 1)
 	hAnimLeft := makeAnimation(0, ANIM_OFFSET_PLAYER_HLEFT, ANIM_FRAMES_PLAYER_H)
 	hAnimRight := makeAnimation(0, ANIM_OFFSET_PLAYER_HRIGHT, ANIM_FRAMES_PLAYER_H)
@@ -76,18 +83,18 @@ func makePlayerAnimationManager() AnimationManager {
 	vAnimDown := makeAnimation(0, ANIM_OFFSET_PLAYER_VDOWN, ANIM_FRAMES_PLAYER_V)
 
 	mgr := AnimationManager{
-		nil,
-		4.0, // anim speed (fps)
+		[]Animation{
+			idleAnim,
+			hAnimLeft,
+			hAnimRight,
+			vAnimUp,
+			vAnimDown,
+		},
+		ANIM_FPS_DEFAULT,
 		0,   // frame
 		0.0, // frame time
 		0,   // ix
 	}
-
-	mgr.anims = append(mgr.anims, idleAnim)
-	mgr.anims = append(mgr.anims, hAnimLeft)
-	mgr.anims = append(mgr.anims, hAnimRight)
-	mgr.anims = append(mgr.anims, vAnimUp)
-	mgr.anims = append(mgr.anims, vAnimDown)
 
 	return mgr
 }
