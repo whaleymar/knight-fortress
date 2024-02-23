@@ -1,19 +1,24 @@
-i might be fucking myself passing around so many pointers once i start multi threading
 
 short term:
 - clean up code (especially for textures)
     - 2d texture array
-    - todos
     - organize code into folders
 - camera entity
+    - I should do all calculations in texel coordinates and let the GPU do the transformations !!!
+    - jittering after player stops moving
+    - repeat texturing
+
+- physics/motion scalars should be scaled by window size
 - physics/collision component(s?)
 - gravity
 - jumping
 - unloading entities (mainly need to free opengl vars)
 - platforms
+
+when I need it:
+- event flow system
 - text rendering
 
 long term:
-- event system
 - entity config files + hot reloading
 - parallel everything

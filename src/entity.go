@@ -21,6 +21,7 @@ type ComponentTypeList interface {
 
 type Entity struct {
 	uid        uint64
+	name       string
 	components ComponentManager
 	position   mgl32.Vec3
 	rwlock     *sync.RWMutex
@@ -38,7 +39,7 @@ func (entity *Entity) setPosition(position mgl32.Vec3) {
 	entity.position = position
 }
 
-func (entity *Entity) getManager() ComponentManager {
+func (entity *Entity) getComponentManager() ComponentManager {
 	return entity.components
 }
 
@@ -67,14 +68,14 @@ func getEntityManager() *EntityManager {
 	return entityManagerPtr
 }
 
-func (eMgr *EntityManager) add(entity Entity) {
+func (eMgr *EntityManager) add(entity *Entity) {
 	// enforce uniqueness?
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
 
 	entity.uid = eMgr.nextId
 	eMgr.nextId++
-	eMgr.entities = append(eMgr.entities, &entity)
+	eMgr.entities = append(eMgr.entities, entity)
 }
 
 func (eMgr *EntityManager) remove(uid uint64) {
@@ -110,7 +111,7 @@ func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entit
 	}
 	entities := make([]*Entity, 0, len(eMgr.entities))
 	for _, entity := range eMgr.entities {
-		_, err := entity.getManager().get(enum)
+		_, err := entity.getComponentManager().get(enum)
 		if err != nil {
 			continue
 		}
@@ -137,7 +138,7 @@ type Component interface {
 }
 
 func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, error) {
-	compMgr := entity.getManager()
+	compMgr := entity.getComponentManager()
 	compInterface, err := compMgr.get(enum)
 	if err != nil {
 		return nil, fmt.Errorf("No %d component found", enum)
@@ -152,7 +153,7 @@ func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, 
 
 func getComponentUnsafe[T ComponentTypeList](enum ComponentType, entity *Entity) *T {
 	// use this for components fetched with getEntitiesWithComponent()
-	compMgr := entity.getManager()
+	compMgr := entity.getComponentManager()
 	compInterface, err := compMgr.get(enum)
 	_ = err
 	comp, ok := (*compInterface).(T)

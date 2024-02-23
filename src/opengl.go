@@ -248,13 +248,16 @@ func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMa
 	}
 }
 
-var screenVertices = []float32{
-	0.0, float32(windowHeight), 0.0, 0.0, 0.0,
-	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 1.0,
-	float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
-	float32(windowWidth), 0.0, 0.0, 1.0, 1.0,
-	0.0, 0.0, 0.0, 0.0, 1.0,
-}
+//	var screenVertices = []float32{
+//		0.0, float32(windowHeight), 0.0, 0.0, 0.0,
+//		float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
+//		0.0, 0.0, 0.0, 0.0, 1.0,
+//		float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
+//		float32(windowWidth), 0.0, 0.0, 1.0, 1.0,
+//		0.0, 0.0, 0.0, 0.0, 1.0,
+//	}
+var screenVertices = makeSquareVertices(windowWidth, windowHeight)
+
+var levelVertices = makeSquareVertices(windowWidth*16, windowHeight*16)
 
 var squareVertices []float32 = makeSquareVertices(64, 64) // placeholder for cDrawable init

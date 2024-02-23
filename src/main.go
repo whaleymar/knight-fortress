@@ -76,8 +76,10 @@ func main() {
 	// init player and entity manager
 	entityManager := getEntityManager()
 
-	entityManager.add(*getPlayerPtr())
-	entityManager.add(makeLevelEntity())
+	entityManager.add(getPlayerPtr())
+	entityManager.add(getCameraPtr())
+	entity := makeLevelEntity()
+	entityManager.add(&entity)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -115,13 +117,19 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
+		// Camera DEBUG
+		// fmt.Println("Camera", getCameraPtr().getPosition())
+
 		// have to sort by depth so things get blended correctly
 		drawableEntities := entityManager.getEntitiesWithComponent(CMP_DRAWABLE)
 		slices.SortFunc(drawableEntities, func(e1, e2 *Entity) int {
 			return cmp.Compare(e1.getPosition().Z(), e2.getPosition().Z())
 		})
 		for _, entity := range drawableEntities {
-			gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
+			screenCoords := getScreenCoordinates(entity.getPosition())
+			// fmt.Println(entity.name, entity.getPosition(), screenCoords)
+			gl.Uniform3fv(offsetUniform, 1, &screenCoords[0])
+			// gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
 			drawComponent := *getComponentUnsafe[*cDrawable](CMP_DRAWABLE, entity)
 
 			nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)

@@ -7,21 +7,22 @@ import (
 )
 
 const (
-	SPRITE_HEIGHT_LEVEL = 225
-	SPRITE_WIDTH_LEVEL  = 250
+	SPRITE_HEIGHT_LEVEL = 256
+	SPRITE_WIDTH_LEVEL  = 320
 )
 
 // eventually this will take a level config file which contains all the component data
 func makeLevelEntity() Entity {
 	entity := Entity{
 		0,
+		"Level",
 		&ComponentList{},
 		mgl32.Vec3{0.0, 0.0, DEPTH_BACKGROUND},
 		&sync.RWMutex{},
 	}
 
 	entity.components.add(&cDrawable{
-		CMP_DRAWABLE,
+		// levelVertices,
 		screenVertices,
 		makeVao(),
 		makeVbo(),

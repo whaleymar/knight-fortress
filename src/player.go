@@ -40,13 +40,13 @@ func getPlayerPtr() *Entity {
 func makePlayerEntity() Entity {
 	entity := Entity{
 		0,
+		"Player",
 		&ComponentList{},
 		mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER},
 		&sync.RWMutex{},
 	}
 
 	entity.components.add(&cDrawable{
-		CMP_DRAWABLE,
 		squareVertices,
 		makeVao(),
 		makeVbo(),
@@ -61,6 +61,7 @@ func makePlayerEntity() Entity {
 		mgl32.Vec3{},
 		PHYSICS_PLAYER_SPEEDMAX,
 		true, // frictionActive
+		nil,
 	})
 
 	return entity

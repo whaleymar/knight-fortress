@@ -1,6 +1,10 @@
 package main
 
 import (
+	// "fmt"
+
+	// "fmt"
+
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -25,9 +29,13 @@ type cMovable struct {
 	accel            mgl32.Vec3
 	speedMax         float32
 	isFrictionActive bool
+	followTarget     *Entity
 }
 
 func (comp *cMovable) update(entity *Entity) {
+	if comp.followTarget != nil {
+		comp.setFollowVelocity(entity)
+	}
 	comp.updateKinematics(entity)
 	var drawComponent *cDrawable
 	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err != nil {
@@ -80,5 +88,17 @@ func (comp *cMovable) updateKinematics(entity *Entity) {
 		entity.getPosition().Add(
 			comp.velocity.Mul(
 				DeltaTime.get())))
+}
 
+func (comp *cMovable) setFollowVelocity(entity *Entity) {
+	targetPos := comp.followTarget.getPosition()
+	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, comp.followTarget); err == nil {
+		drawComponent := *tmp
+		frameSizeX, frameSizeY := drawComponent.getFrameSize()
+		targetPos[0] += (frameSizeX * pixelsPerTexel / windowWidth)
+		targetPos[1] += (frameSizeY * pixelsPerTexel / windowHeight)
+	}
+	distance := targetPos.Sub(entity.getPosition())
+	comp.velocity = mgl32.Vec3{distance[0], distance[1], 0.0}.Mul(5)
+	// entity.position = targetPos // for testing TODO
 }

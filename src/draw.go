@@ -16,7 +16,6 @@ const (
 )
 
 type cDrawable struct {
-	enum             ComponentType
 	vertices         []float32
 	vao              VAO
 	vbo              VBO
@@ -93,6 +92,11 @@ func (comp *cDrawable) setAnimation(animIx AnimationIndex) {
 	if comp.sprite.animManager.setAnimation(animIx) {
 		comp.isUvUpdateNeeded = true
 	}
+}
+
+func (comp *cDrawable) getFrameSize() (float32, float32) {
+	frameSize := comp.sprite.frameSize
+	return float32(frameSize[0]), float32(frameSize[1])
 }
 
 func (animManager *AnimationManager) getAnimation() Animation {
