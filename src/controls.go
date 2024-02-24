@@ -5,10 +5,6 @@ import (
 	// "github.com/go-gl/mathgl/mgl32"
 )
 
-const (
-	ACCEL_PLAYER_DEFAULT = 0.1
-)
-
 func initControls(window *glfw.Window) {
 	window.SetKeyCallback(playerControlsCallback)
 }

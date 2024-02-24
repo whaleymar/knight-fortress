@@ -5,13 +5,9 @@ import (
 	"fmt"
 	"slices"
 
-	// "time"
-
-	// "image/png"
 	_ "image/png"
 	"log"
 
-	// "os"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -25,27 +21,13 @@ var _ = cmp.Compare(1, 1)
 var _ = slices.Min([]int{1})
 
 const (
-	windowWidth = 1280
-	// windowWidth  = 720
-	windowHeight = 720
-	windowTitle  = "Gaming"
-
-	VERTEX_FILE   = "shader/vertex.glsl"
-	FRAGMENT_FILE = "shader/fragment.glsl"
-
-	STRIDE_SIZE = 5
-	FLOAT_SIZE  = 4
-
-	COLOR_CLEAR_R = 0.28627450980392155
-	COLOR_CLEAR_G = 0.8705882352941177
-	COLOR_CLEAR_B = 0.8509803921568627
+	COLOR_CLEAR_R = 0.12
+	COLOR_CLEAR_G = 0.13
+	COLOR_CLEAR_B = 0.15
 	COLOR_CLEAR_A = 1.0
 )
 
 var ORIGIN = mgl32.Vec3{0.0, 0.0, 0.0}
-
-// var SIZE_STANDARD = mgl32.Vec2{1.0, 1.0}
-var ZERO3 = mgl32.Vec3{0.0, 0.0, 0.0}
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -63,17 +45,17 @@ func main() {
 
 	gl.UseProgram(program)
 
-	_, _ = initCamera(program)
+	_ = initCamera(program)
 
-	// player position uniform
-	offset := mgl32.Vec3{0.0, 0.0, 0.0}
-	offsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
-	gl.Uniform3fv(offsetUniform, 1, &offset[0])
+	// offsets
+	tmpOffset := mgl32.Vec3{}
+	drawOffsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
+	gl.Uniform3fv(drawOffsetUniform, 1, &tmpOffset[0])
 
 	initControls(window)
 	initMainTexture()
 
-	// init player and entity manager
+	// init entities
 	entityManager := getEntityManager()
 
 	entityManager.add(getPlayerPtr())
@@ -117,9 +99,6 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		// Camera DEBUG
-		// fmt.Println("Camera", getCameraPtr().getPosition())
-
 		// have to sort by depth so things get blended correctly
 		drawableEntities := entityManager.getEntitiesWithComponent(CMP_DRAWABLE)
 		slices.SortFunc(drawableEntities, func(e1, e2 *Entity) int {
@@ -127,9 +106,7 @@ func main() {
 		})
 		for _, entity := range drawableEntities {
 			screenCoords := getScreenCoordinates(entity.getPosition())
-			// fmt.Println(entity.name, entity.getPosition(), screenCoords)
-			gl.Uniform3fv(offsetUniform, 1, &screenCoords[0])
-			// gl.Uniform3fv(offsetUniform, 1, &entity.position[0])
+			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
 			drawComponent := *getComponentUnsafe[*cDrawable](CMP_DRAWABLE, entity)
 
 			nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)

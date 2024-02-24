@@ -19,7 +19,6 @@ const (
 	ANIM_FRAMES_PLAYER_H      = 2
 	ANIM_FRAMES_PLAYER_V      = 4
 	ANIM_FPS_DEFAULT          = 4.0
-	PHYSICS_PLAYER_SPEEDMAX   = 0.5
 )
 
 var _PLAYER_LOCK = &sync.Mutex{}

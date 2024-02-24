@@ -129,7 +129,6 @@ func makeTextureArray(arraySize [3]uint32) TextureArray {
 	return TextureArray{
 		nil,
 		arraySize,
-		// tileSize,
 	}
 }
 

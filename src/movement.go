@@ -16,9 +16,7 @@ const (
 )
 
 const (
-	PHYSICS_FRICTION_COEF   = float32(0.5)
-	PHYSICS_MIN_SPEED       = float32(0.0001)
-	FOLLOW_CLAMP_DISTANCE   = float32(0.001)
+	FOLLOW_CLAMP_DISTANCE   = float32(0.001) // TODO conversion
 	FOLLOW_SPEED_MULTIPLIER = 10
 )
 

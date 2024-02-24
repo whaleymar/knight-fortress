@@ -15,7 +15,13 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const pixelsPerTexel = 4
+const (
+	STRIDE_SIZE = 5
+	FLOAT_SIZE  = 4
+
+	VERTEX_FILE   = "shader/vertex.glsl"
+	FRAGMENT_FILE = "shader/fragment.glsl"
+)
 
 type ShaderConfig struct {
 	vert             uint32
@@ -72,32 +78,12 @@ func initOpenGL() (uint32, error) {
 	return program, nil
 }
 
-//	func initCamera(program uint32) (mgl32.Mat4, mgl32.Mat4) {
-//		projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
-//		projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-//		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
-//
-//		camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 1}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, -1, 0})
-//		cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-//		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-//
-//		return projection, camera
-// }
-
-func initCamera(program uint32) (mgl32.Mat4, mgl32.Mat4) {
+func initCamera(program uint32) mgl32.Mat4 {
 	projection := mgl32.Ortho2D(0, float32(windowWidth), 0, float32(windowHeight))
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-	camera := mgl32.LookAtV(
-		mgl32.Vec3{float32(windowWidth) / 2, float32(windowHeight) / 2, 1}, // eye
-		mgl32.Vec3{float32(windowWidth) / 2, float32(windowHeight) / 2, 0}, // center
-		mgl32.Vec3{0, 1, 0}, // up
-	)
-	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-
-	return projection, camera
+	return projection
 }
 
 func compileShader(source string, shaderType uint32) (uint32, error) {
@@ -248,14 +234,6 @@ func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMa
 	}
 }
 
-//	var screenVertices = []float32{
-//		0.0, float32(windowHeight), 0.0, 0.0, 0.0,
-//		float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
-//		0.0, 0.0, 0.0, 0.0, 1.0,
-//		float32(windowWidth), float32(windowHeight), 0.0, 1.0, 0.0,
-//		float32(windowWidth), 0.0, 0.0, 1.0, 1.0,
-//		0.0, 0.0, 0.0, 0.0, 1.0,
-//	}
 var screenVertices = makeSquareVertices(windowWidth, windowHeight)
 
 var levelVertices = makeSquareVertices(windowWidth*16, windowHeight*16)

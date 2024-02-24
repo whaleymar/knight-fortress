@@ -42,7 +42,6 @@ func makeCameraEntity() Entity {
 }
 
 func getScreenCoordinates(worldCoords mgl32.Vec3) mgl32.Vec3 {
-	// TODO should happen in shader
-	windowOffset := mgl32.Vec3{1.0, 1.0, 0}
-	return worldCoords.Sub(getCameraPtr().getPosition()).Add(windowOffset)
+	// idk how to do this in the shader or if i even should
+	return worldCoords.Sub(getCameraPtr().getPosition())
 }
