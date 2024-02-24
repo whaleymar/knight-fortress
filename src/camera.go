@@ -42,6 +42,8 @@ func makeCameraEntity() Entity {
 }
 
 func getScreenCoordinates(worldCoords mgl32.Vec3) mgl32.Vec3 {
-	// idk how to do this in the shader or if i even should
-	return worldCoords.Sub(getCameraPtr().getPosition())
+	// get position relative to camera
+	// convert from meters (1 meter == 32 texels) to pixels
+	centered := worldCoords.Sub(getCameraPtr().getPosition())
+	return mgl32.Vec3{centered[0] * TEXEL_SCALE_X, centered[1] * TEXEL_SCALE_Y, centered[2]}
 }

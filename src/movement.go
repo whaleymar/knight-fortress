@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -16,8 +18,9 @@ const (
 )
 
 const (
-	FOLLOW_CLAMP_DISTANCE   = float32(0.001) // TODO conversion
-	FOLLOW_SPEED_MULTIPLIER = 10
+	FOLLOW_CLAMP_DISTANCE   = float32(0.0001)
+	FOLLOW_SPEED_MIN        = float32(0.1)
+	FOLLOW_SPEED_MULTIPLIER = float32(10.0)
 )
 
 type cMovable struct {
@@ -73,7 +76,7 @@ func (comp *cMovable) updateKinematics(entity *Entity) {
 			comp.velocity[i] += comp.accel[i]
 			comp.velocity[i] = clamp(comp.velocity[i], velocityMin, velocityMax)
 		} else if comp.velocity[i] != zerof && comp.isFrictionActive {
-			comp.velocity[i] *= PHYSICS_FRICTION_COEF
+			comp.velocity[i] *= (1 - PHYSICS_FRICTION_COEF)
 			if mgl32.Abs(comp.velocity[i]) < PHYSICS_MIN_SPEED {
 				comp.velocity[i] = zerof
 			}
@@ -89,7 +92,7 @@ func (comp *cMovable) getStepDistance(entity *Entity) mgl32.Vec3 {
 
 func (comp *cMovable) setFollowVelocity(entity *Entity) {
 	targetPos := comp.followTarget.getPosition()
-
+	// entity.setPosition(targetPos)
 	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, comp.followTarget); err == nil {
 		drawComponent := *tmp
 		frameSizeX, frameSizeY := drawComponent.getFrameSize()
@@ -103,22 +106,23 @@ func (comp *cMovable) setFollowVelocity(entity *Entity) {
 
 	distance := targetPos.Sub(curPosition)
 	comp.velocity = mgl32.Vec3{distance[0], distance[1], 0.0}.Mul(FOLLOW_SPEED_MULTIPLIER)
-
-	// if we're really close OR we're going to overshoot the target, set position to target
-	shouldClampX := mgl32.Abs(distance[0]) <= FOLLOW_CLAMP_DISTANCE
-	shouldClampY := mgl32.Abs(distance[1]) <= FOLLOW_CLAMP_DISTANCE
 	nextDistance := targetPos.Sub(comp.getStepDistance(entity))
-	shouldClampX = shouldClampX || ((nextDistance[0] >= 0) != (distance[0] >= 0))
-	shouldClampY = shouldClampY || ((nextDistance[1] >= 0) != (distance[1] >= 0))
+	newPosition := curPosition
+	newVelocity := comp.velocity
 
-	if shouldClampX && shouldClampY {
-		entity.setPosition(targetPos)
-		comp.velocity = mgl32.Vec3{}
-	} else if shouldClampX {
-		entity.setPosition(mgl32.Vec3{targetPos[0], curPosition[1], curPosition[2]})
-		comp.velocity = mgl32.Vec3{0.0, comp.velocity[1], comp.velocity[2]}
-	} else if shouldClampY {
-		entity.setPosition(mgl32.Vec3{curPosition[0], targetPos[1], curPosition[2]})
-		comp.velocity = mgl32.Vec3{comp.velocity[0], 0.0, comp.velocity[2]}
+	for i := 0; i < 2; i++ {
+		if distance[i] == 0.0 {
+			continue
+		}
+		// if we're really close OR we're going to overshoot the target, set position to target
+		shouldClamp := mgl32.Abs(distance[i]) <= FOLLOW_CLAMP_DISTANCE
+		shouldClamp = shouldClamp || ((nextDistance[i] >= 0) != (distance[i] >= 0))
+		if !shouldClamp {
+			continue
+		}
+		newPosition[i] = targetPos[i]
+		newVelocity[i] = 0.0
 	}
+	entity.setPosition(newPosition)
+	comp.velocity = newVelocity
 }
