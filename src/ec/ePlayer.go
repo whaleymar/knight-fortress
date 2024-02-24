@@ -1,9 +1,12 @@
-package main
+package ec
 
 import (
 	"sync"
 
+	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/whaleymar/knight-fortress/src/gfx"
+	"github.com/whaleymar/knight-fortress/src/phys"
 )
 
 const (
@@ -24,7 +27,7 @@ const (
 var _PLAYER_LOCK = &sync.Mutex{}
 var playerPtr *Entity
 
-func getPlayerPtr() *Entity {
+func GetPlayerPtr() *Entity {
 	if playerPtr == nil {
 		_PLAYER_LOCK.Lock()
 		defer _PLAYER_LOCK.Unlock()
@@ -45,20 +48,20 @@ func makePlayerEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.add(&cDrawable{
-		squareVertices,
-		makeVao(),
-		makeVbo(),
+	entity.components.Add(&CDrawable{
+		gfx.SquareVertices,
+		gfx.MakeVao(),
+		gfx.MakeVbo(),
 		makePlayerSprite(makePlayerAnimationManager()),
-		TEX_MAIN,
+		gfx.TEX_MAIN,
 		&sync.RWMutex{},
 		true, // isUvUpdateNeeded
 	})
 
-	entity.components.add(&cMovable{
+	entity.components.Add(&CMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
-		PHYSICS_PLAYER_SPEEDMAX,
+		phys.PHYSICS_PLAYER_SPEEDMAX,
 		true, // frictionActive
 		nil,
 	})
@@ -103,5 +106,38 @@ func makeAnimation(offsetX, offsetY, frameCount int) Animation {
 	return Animation{
 		[2]int{offsetX, offsetY},
 		frameCount,
+	}
+}
+
+func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+	if action == glfw.Repeat {
+		return
+	}
+
+	var accel float32
+	if action == glfw.Release {
+		// sets accel in that direction to zero
+		accel = -phys.ACCEL_PLAYER_DEFAULT
+	} else {
+		accel = phys.ACCEL_PLAYER_DEFAULT
+	}
+
+	player := GetPlayerPtr()
+
+	var moveComponent *CMovable
+	if tmp, err := GetComponent[*CMovable](CMP_MOVABLE, player); err != nil {
+		return
+	} else {
+		moveComponent = *tmp
+	}
+	switch key {
+	case glfw.KeyW:
+		moveComponent.accel[1] += accel
+	case glfw.KeyS:
+		moveComponent.accel[1] -= accel
+	case glfw.KeyA:
+		moveComponent.accel[0] -= accel
+	case glfw.KeyD:
+		moveComponent.accel[0] += accel
 	}
 }

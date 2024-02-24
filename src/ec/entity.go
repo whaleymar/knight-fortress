@@ -1,4 +1,4 @@
-package main
+package ec
 
 import (
 	"fmt"
@@ -27,19 +27,19 @@ type Entity struct {
 	rwlock     *sync.RWMutex
 }
 
-func (entity *Entity) getPosition() mgl32.Vec3 {
+func (entity *Entity) GetPosition() mgl32.Vec3 {
 	entity.rwlock.RLock()
 	defer entity.rwlock.RUnlock()
 	return entity.position
 }
 
-func (entity *Entity) setPosition(position mgl32.Vec3) {
+func (entity *Entity) SetPosition(position mgl32.Vec3) {
 	entity.rwlock.Lock()
 	defer entity.rwlock.Unlock()
 	entity.position = position
 }
 
-func (entity *Entity) getComponentManager() ComponentManager {
+func (entity *Entity) GetComponentManager() ComponentManager {
 	return entity.components
 }
 
@@ -56,7 +56,7 @@ type EntityManager struct {
 var _ENTITYMGR_LOCK = &sync.Mutex{}
 var entityManagerPtr *EntityManager
 
-func getEntityManager() *EntityManager {
+func GetEntityManager() *EntityManager {
 	if entityManagerPtr == nil {
 		_ENTITYMGR_LOCK.Lock()
 		defer _ENTITYMGR_LOCK.Unlock()
@@ -68,7 +68,7 @@ func getEntityManager() *EntityManager {
 	return entityManagerPtr
 }
 
-func (eMgr *EntityManager) add(entity *Entity) {
+func (eMgr *EntityManager) Add(entity *Entity) {
 	// enforce uniqueness?
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
@@ -78,7 +78,7 @@ func (eMgr *EntityManager) add(entity *Entity) {
 	eMgr.entities = append(eMgr.entities, entity)
 }
 
-func (eMgr *EntityManager) remove(uid uint64) {
+func (eMgr *EntityManager) Remove(uid uint64) {
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
 
@@ -90,7 +90,7 @@ func (eMgr *EntityManager) remove(uid uint64) {
 	}
 }
 
-func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
+func (eMgr *EntityManager) Get(uid uint64) (*Entity, error) {
 	eMgr.rwlock.RLock()
 	defer eMgr.rwlock.RUnlock()
 
@@ -102,7 +102,7 @@ func (eMgr *EntityManager) get(uid uint64) (*Entity, error) {
 	return nil, fmt.Errorf("Entity with ID %d not found", uid)
 }
 
-func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entity {
+func (eMgr *EntityManager) GetEntitiesWithComponent(enum ComponentType) []*Entity {
 	eMgr.rwlock.RLock()
 	defer eMgr.rwlock.RUnlock()
 
@@ -111,7 +111,7 @@ func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entit
 	}
 	entities := make([]*Entity, 0, len(eMgr.entities))
 	for _, entity := range eMgr.entities {
-		_, err := entity.getComponentManager().get(enum)
+		_, err := entity.GetComponentManager().Get(enum)
 		if err != nil {
 			continue
 		}
@@ -122,10 +122,10 @@ func (eMgr *EntityManager) getEntitiesWithComponent(enum ComponentType) []*Entit
 
 // idk if i need multiple of these... maybe an event manager
 type ComponentManager interface {
-	add(Component)
-	get(ComponentType) (*Component, error)
-	remove(ComponentType) error
-	update(*Entity)
+	Add(Component)
+	Get(ComponentType) (*Component, error)
+	Remove(ComponentType) error
+	Update(*Entity)
 }
 
 type ComponentList struct {
@@ -137,9 +137,9 @@ type Component interface {
 	getType() ComponentType
 }
 
-func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, error) {
-	compMgr := entity.getComponentManager()
-	compInterface, err := compMgr.get(enum)
+func GetComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, error) {
+	compMgr := entity.GetComponentManager()
+	compInterface, err := compMgr.Get(enum)
 	if err != nil {
 		return nil, fmt.Errorf("No %d component found", enum)
 	}
@@ -151,21 +151,21 @@ func getComponent[T ComponentTypeList](enum ComponentType, entity *Entity) (*T, 
 	return &comp, nil
 }
 
-func getComponentUnsafe[T ComponentTypeList](enum ComponentType, entity *Entity) *T {
+func GetComponentUnsafe[T ComponentTypeList](enum ComponentType, entity *Entity) *T {
 	// use this for components fetched with getEntitiesWithComponent()
-	compMgr := entity.getComponentManager()
-	compInterface, err := compMgr.get(enum)
+	compMgr := entity.GetComponentManager()
+	compInterface, err := compMgr.Get(enum)
 	_ = err
 	comp, ok := (*compInterface).(T)
 	_ = ok
 	return &comp
 }
 
-func (components *ComponentList) add(comp Component) {
+func (components *ComponentList) Add(comp Component) {
 	components.components = append(components.components, comp)
 }
 
-func (components *ComponentList) get(enum ComponentType) (*Component, error) {
+func (components *ComponentList) Get(enum ComponentType) (*Component, error) {
 	for i, comp := range components.components {
 		if comp.getType() == enum {
 			return &components.components[i], nil
@@ -174,7 +174,7 @@ func (components *ComponentList) get(enum ComponentType) (*Component, error) {
 	return nil, fmt.Errorf("Component not found: %d", enum)
 }
 
-func (components *ComponentList) remove(enum ComponentType) error {
+func (components *ComponentList) Remove(enum ComponentType) error {
 	for i, comp := range components.components {
 		if comp.getType() == enum {
 			components.components = append(components.components[:i], components.components[i+1:]...)
@@ -184,7 +184,7 @@ func (components *ComponentList) remove(enum ComponentType) error {
 	return fmt.Errorf("Component not found: %d", enum)
 }
 
-func (components *ComponentList) update(entity *Entity) {
+func (components *ComponentList) Update(entity *Entity) {
 	for _, comp := range components.components {
 		comp.update(entity)
 	}

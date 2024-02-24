@@ -1,10 +1,8 @@
-package main
+package ec
 
 import (
-	"fmt"
-	"image"
-	"image/draw"
-	"os"
+	"github.com/whaleymar/knight-fortress/src/gfx"
+	"github.com/whaleymar/knight-fortress/src/sys"
 	"sync"
 )
 
@@ -15,12 +13,12 @@ const (
 	DEPTH_PLAYER
 )
 
-type cDrawable struct {
+type CDrawable struct {
 	vertices         []float32
-	vao              VAO
-	vbo              VBO
+	vao              gfx.VAO
+	vbo              gfx.VBO
 	sprite           Sprite
-	textureIx        TextureSlot
+	textureIx        gfx.TextureSlot
 	rwlock           *sync.RWMutex
 	isUvUpdateNeeded bool
 }
@@ -44,11 +42,11 @@ type Animation struct {
 	frameCount    int
 }
 
-func (comp *cDrawable) update(entity *Entity) {
+func (comp *CDrawable) update(entity *Entity) {
 	animManager := &comp.sprite.animManager
 	if animManager.animSpeed > 0.0 {
 		// check if should update animation frame
-		animManager.frameTime += DeltaTime.get()
+		animManager.frameTime += sys.DeltaTime.Get()
 		if animManager.frameTime >= 1/animManager.animSpeed {
 			animManager.frameTime = 0.0
 			animManager.frame = (animManager.frame + 1) % animManager.getAnimation().frameCount
@@ -59,7 +57,7 @@ func (comp *cDrawable) update(entity *Entity) {
 	// update UV
 	if comp.isUvUpdateNeeded {
 		var xMin, xMax, yMin, yMax float32
-		sheetSizeX, sheetSizeY := getTextureManager().getTextureSize(comp.textureIx, 0) // TODO hard coded array Index
+		sheetSizeX, sheetSizeY := gfx.GetTextureManager().GetTextureSize(comp.textureIx, 0) // TODO hard coded array Index
 
 		pixelOffset := float32(comp.sprite.sheetPosition[0] + comp.sprite.frameSize[0]*(comp.sprite.animManager.getAnimation().textureOffset[0]+comp.sprite.animManager.frame))
 		xMin = pixelOffset / sheetSizeX
@@ -69,23 +67,23 @@ func (comp *cDrawable) update(entity *Entity) {
 		yMin = pixelOffset / sheetSizeY
 		yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / sheetSizeY
 
-		comp.vertices = makeSquareVerticesWithUV(comp.sprite.frameSize[0]*pixelsPerTexel, comp.sprite.frameSize[1]*pixelsPerTexel, xMin, xMax, yMin, yMax)
+		comp.vertices = gfx.MakeSquareVerticesWithUV(comp.sprite.frameSize[0]*gfx.PixelsPerTexel, comp.sprite.frameSize[1]*gfx.PixelsPerTexel, xMin, xMax, yMin, yMax)
 	}
 	comp.isUvUpdateNeeded = false
 }
 
-func (comp *cDrawable) getType() ComponentType {
+func (comp *CDrawable) getType() ComponentType {
 	return CMP_DRAWABLE
 }
 
-func (comp *cDrawable) getAnimation() Animation {
+func (comp *CDrawable) getAnimation() Animation {
 	comp.rwlock.RLock()
 	defer comp.rwlock.RUnlock()
 
 	return comp.sprite.animManager.getAnimation()
 }
 
-func (comp *cDrawable) setAnimation(animIx AnimationIndex) {
+func (comp *CDrawable) setAnimation(animIx AnimationIndex) {
 	comp.rwlock.Lock()
 	defer comp.rwlock.Unlock()
 
@@ -94,9 +92,21 @@ func (comp *cDrawable) setAnimation(animIx AnimationIndex) {
 	}
 }
 
-func (comp *cDrawable) getFrameSize() (float32, float32) {
+func (comp *CDrawable) getFrameSize() (float32, float32) {
 	frameSize := comp.sprite.frameSize
 	return float32(frameSize[0]), float32(frameSize[1])
+}
+
+func (comp *CDrawable) GetVao() gfx.VAO {
+	return comp.vao
+}
+
+func (comp *CDrawable) GetVbo() gfx.VBO {
+	return comp.vbo
+}
+
+func (comp *CDrawable) GetVertices() []float32 {
+	return comp.vertices
 }
 
 func (animManager *AnimationManager) getAnimation() Animation {
@@ -113,26 +123,6 @@ func (animManager *AnimationManager) setAnimation(animIx AnimationIndex) bool {
 	animManager.frame = 0
 	animManager.frameTime = 0.0
 	return true
-}
-
-func loadImage(filename string) (*image.RGBA, error) {
-	imgFile, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("Image %q not found on disk: %v", filename, err)
-	}
-	img, _, err := image.Decode(imgFile)
-	if err != nil {
-		return nil, err
-	}
-
-	rgba := image.NewRGBA(img.Bounds())
-	if rgba.Stride != rgba.Rect.Size().X*4 {
-		return nil, fmt.Errorf("unsupported stride")
-	}
-
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
-
-	return rgba, nil
 }
 
 func makeStaticAnimationManager() AnimationManager {

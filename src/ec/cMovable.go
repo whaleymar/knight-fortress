@@ -1,9 +1,11 @@
-package main
+package ec
 
 import (
-	"fmt"
-
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/whaleymar/knight-fortress/src/gfx"
+	"github.com/whaleymar/knight-fortress/src/math"
+	"github.com/whaleymar/knight-fortress/src/phys"
+	"github.com/whaleymar/knight-fortress/src/sys"
 )
 
 // movement based animations here: fall, jump, crouch
@@ -23,7 +25,7 @@ const (
 	FOLLOW_SPEED_MULTIPLIER = float32(10.0)
 )
 
-type cMovable struct {
+type CMovable struct {
 	velocity         mgl32.Vec3
 	accel            mgl32.Vec3
 	speedMax         float32
@@ -31,13 +33,13 @@ type cMovable struct {
 	followTarget     *Entity
 }
 
-func (comp *cMovable) update(entity *Entity) {
+func (comp *CMovable) update(entity *Entity) {
 	if comp.followTarget != nil {
 		comp.setFollowVelocity(entity)
 	}
 	comp.updateKinematics(entity)
-	var drawComponent *cDrawable
-	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, entity); err != nil {
+	var drawComponent *CDrawable
+	if tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, entity); err != nil {
 		return
 	} else {
 		drawComponent = *tmp
@@ -60,11 +62,11 @@ func (comp *cMovable) update(entity *Entity) {
 	drawComponent.setAnimation(animType)
 }
 
-func (comp *cMovable) getType() ComponentType {
+func (comp *CMovable) getType() ComponentType {
 	return CMP_MOVABLE
 }
 
-func (comp *cMovable) updateKinematics(entity *Entity) {
+func (comp *CMovable) updateKinematics(entity *Entity) {
 	speedMax := comp.speedMax
 	velocityMax := float32(speedMax)
 	velocityMin := float32(-speedMax)
@@ -74,32 +76,32 @@ func (comp *cMovable) updateKinematics(entity *Entity) {
 	for i := 0; i < 2; i++ {
 		if comp.accel[i] != zerof {
 			comp.velocity[i] += comp.accel[i]
-			comp.velocity[i] = clamp(comp.velocity[i], velocityMin, velocityMax)
+			comp.velocity[i] = math.Clamp(comp.velocity[i], velocityMin, velocityMax)
 		} else if comp.velocity[i] != zerof && comp.isFrictionActive {
-			comp.velocity[i] *= (1 - PHYSICS_FRICTION_COEF)
-			if mgl32.Abs(comp.velocity[i]) < PHYSICS_MIN_SPEED {
+			comp.velocity[i] *= (1 - phys.PHYSICS_FRICTION_COEF)
+			if mgl32.Abs(comp.velocity[i]) < phys.PHYSICS_MIN_SPEED {
 				comp.velocity[i] = zerof
 			}
 		}
 	}
 
-	entity.setPosition(comp.getStepDistance(entity))
+	entity.SetPosition(comp.getStepDistance(entity))
 }
 
-func (comp *cMovable) getStepDistance(entity *Entity) mgl32.Vec3 {
-	return entity.getPosition().Add(comp.velocity.Mul(DeltaTime.get()))
+func (comp *CMovable) getStepDistance(entity *Entity) mgl32.Vec3 {
+	return entity.GetPosition().Add(comp.velocity.Mul(sys.DeltaTime.Get()))
 }
 
-func (comp *cMovable) setFollowVelocity(entity *Entity) {
-	targetPos := comp.followTarget.getPosition()
+func (comp *CMovable) setFollowVelocity(entity *Entity) {
+	targetPos := comp.followTarget.GetPosition()
 	// entity.setPosition(targetPos)
-	if tmp, err := getComponent[*cDrawable](CMP_DRAWABLE, comp.followTarget); err == nil {
+	if tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, comp.followTarget); err == nil {
 		drawComponent := *tmp
 		frameSizeX, frameSizeY := drawComponent.getFrameSize()
-		targetPos[0] += (frameSizeX * pixelsPerTexel / windowWidth)
-		targetPos[1] += (frameSizeY * pixelsPerTexel / windowHeight)
+		targetPos[0] += (frameSizeX * gfx.PixelsPerTexel / gfx.WindowWidth)
+		targetPos[1] += (frameSizeY * gfx.PixelsPerTexel / gfx.WindowHeight)
 	}
-	curPosition := entity.getPosition()
+	curPosition := entity.GetPosition()
 	if targetPos == curPosition {
 		return
 	}
@@ -123,6 +125,6 @@ func (comp *cMovable) setFollowVelocity(entity *Entity) {
 		newPosition[i] = targetPos[i]
 		newVelocity[i] = 0.0
 	}
-	entity.setPosition(newPosition)
+	entity.SetPosition(newPosition)
 	comp.velocity = newVelocity
 }

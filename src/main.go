@@ -13,6 +13,10 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+
+	"github.com/whaleymar/knight-fortress/src/ec"
+	"github.com/whaleymar/knight-fortress/src/gfx"
+	"github.com/whaleymar/knight-fortress/src/sys"
 )
 
 // unused import error is probably the stupidest thing I've ever seen
@@ -38,30 +42,30 @@ func main() {
 	window := initGlfw()
 	defer glfw.Terminate()
 
-	program, err := initOpenGL()
+	program, err := gfx.InitOpenGL()
 	if err != nil {
 		panic(err)
 	}
 
 	gl.UseProgram(program)
 
-	_ = initCamera(program)
+	_ = gfx.InitCamera(program)
 
 	// offsets
 	tmpOffset := mgl32.Vec3{}
 	drawOffsetUniform := gl.GetUniformLocation(program, gl.Str("offset\x00"))
 	gl.Uniform3fv(drawOffsetUniform, 1, &tmpOffset[0])
 
-	initControls(window)
-	initMainTexture()
+	InitControls(window)
+	gfx.InitMainTexture()
 
 	// init entities
-	entityManager := getEntityManager()
+	entityManager := ec.GetEntityManager()
 
-	entityManager.add(getPlayerPtr())
-	entityManager.add(getCameraPtr())
-	entity := makeLevelEntity()
-	entityManager.add(&entity)
+	entityManager.Add(ec.GetPlayerPtr())
+	entityManager.Add(ec.GetCameraPtr())
+	entity := ec.MakeLevelEntity()
+	entityManager.Add(&entity)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -80,44 +84,44 @@ func main() {
 	go updateFPS(fpsCh)
 
 	for !window.ShouldClose() {
-		DeltaTime.update()
+		sys.DeltaTime.Update()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
-		fpsCh <- 1 / DeltaTime.get()
+		fpsCh <- 1 / sys.DeltaTime.Get()
 
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
 
-		for _, entity := range entityManager.getEntitiesWithComponent(CMP_ANY) {
-			entity.components.update(entity)
+		for _, entity := range entityManager.GetEntitiesWithComponent(ec.CMP_ANY) {
+			entity.GetComponentManager().Update(entity)
 		}
 
 		// Render
 		gl.UseProgram(program) // I don't know why I'm running this every frame but I'm afraid to change it
 
-		texture = getTextureManager().getTextureHandle(TEX_MAIN)
+		texture = gfx.GetTextureManager().GetTextureHandle(gfx.TEX_MAIN)
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
 		// have to sort by depth so things get blended correctly
-		drawableEntities := entityManager.getEntitiesWithComponent(CMP_DRAWABLE)
-		slices.SortFunc(drawableEntities, func(e1, e2 *Entity) int {
-			return cmp.Compare(e1.getPosition().Z(), e2.getPosition().Z())
+		drawableEntities := entityManager.GetEntitiesWithComponent(ec.CMP_DRAWABLE)
+		slices.SortFunc(drawableEntities, func(e1, e2 *ec.Entity) int {
+			return cmp.Compare(e1.GetPosition().Z(), e2.GetPosition().Z())
 		})
 		for _, entity := range drawableEntities {
 			// if entity.name == "Player" {
 			// 	fmt.Println(entity.getPosition())
 			// }
-			screenCoords := getScreenCoordinates(entity.getPosition())
+			screenCoords := ec.GetScreenCoordinates(entity.GetPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
-			drawComponent := *getComponentUnsafe[*cDrawable](CMP_DRAWABLE, entity)
+			drawComponent := *ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, entity)
 
-			nVertices := int32(len(drawComponent.vertices) / STRIDE_SIZE)
-			drawComponent.vao.bind()
-			drawComponent.vbo.bind()
-			drawComponent.vbo.buffer(drawComponent.vertices)
+			nVertices := int32(len(drawComponent.GetVertices()) / gfx.STRIDE_SIZE)
+			drawComponent.GetVao().Bind()
+			drawComponent.GetVbo().Bind()
+			drawComponent.GetVbo().Buffer(drawComponent.GetVertices())
 
-			updateShaderVars(program)
+			gfx.UpdateShaderVars(program)
 			gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
 		}
 
@@ -137,12 +141,16 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, windowTitle, nil, nil) // idk what the last 2 args do
+	window, err := glfw.CreateWindow(gfx.WindowWidth, gfx.WindowHeight, gfx.WindowTitle, nil, nil) // idk what the last 2 args do
 	if err != nil {
 		panic(err)
 	}
 	window.MakeContextCurrent()
 	return window
+}
+
+func InitControls(window *glfw.Window) {
+	window.SetKeyCallback(ec.PlayerControlsCallback)
 }
 
 func updateFPS(fpsCh <-chan float32) {

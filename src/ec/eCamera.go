@@ -1,15 +1,16 @@
-package main
+package ec
 
 import (
 	"sync"
 
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/whaleymar/knight-fortress/src/gfx"
 )
 
 var _CAMERA_LOCK = &sync.Mutex{}
 var cameraPtr *Entity
 
-func getCameraPtr() *Entity {
+func GetCameraPtr() *Entity {
 	if cameraPtr == nil {
 		_CAMERA_LOCK.Lock()
 		defer _CAMERA_LOCK.Unlock()
@@ -30,20 +31,20 @@ func makeCameraEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.add(&cMovable{
+	entity.components.Add(&CMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
 		mgl32.InfPos,
 		false,
-		getPlayerPtr(),
+		GetPlayerPtr(),
 	})
 
 	return entity
 }
 
-func getScreenCoordinates(worldCoords mgl32.Vec3) mgl32.Vec3 {
+func GetScreenCoordinates(worldCoords mgl32.Vec3) mgl32.Vec3 {
 	// get position relative to camera
 	// convert from meters (1 meter == 32 texels) to pixels
-	centered := worldCoords.Sub(getCameraPtr().getPosition())
-	return mgl32.Vec3{centered[0] * TEXEL_SCALE_X, centered[1] * TEXEL_SCALE_Y, centered[2]}
+	centered := worldCoords.Sub(GetCameraPtr().GetPosition())
+	return mgl32.Vec3{centered[0] * gfx.TEXEL_SCALE_X, centered[1] * gfx.TEXEL_SCALE_Y, centered[2]}
 }

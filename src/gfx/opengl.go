@@ -1,4 +1,4 @@
-package main
+package gfx
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ type VBO struct {
 	handle uint32
 }
 
-func initOpenGL() (uint32, error) {
+func InitOpenGL() (uint32, error) {
 
 	if err := gl.Init(); err != nil {
 		panic(err)
@@ -78,8 +78,8 @@ func initOpenGL() (uint32, error) {
 	return program, nil
 }
 
-func initCamera(program uint32) mgl32.Mat4 {
-	projection := mgl32.Ortho2D(0, float32(windowWidth), 0, float32(windowHeight))
+func InitCamera(program uint32) mgl32.Mat4 {
+	projection := mgl32.Ortho2D(0, float32(WindowWidth), 0, float32(WindowHeight))
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
@@ -127,31 +127,31 @@ func loadShaders() (string, string) {
 	return vertexShader, fragmentShader
 }
 
-func makeVao() VAO {
+func MakeVao() VAO {
 	var vao VAO
 	gl.GenVertexArrays(1, &vao.handle)
 	return vao
 }
 
-func (vao VAO) bind() {
+func (vao VAO) Bind() {
 	gl.BindVertexArray(vao.handle)
 }
 
-func makeVbo() VBO {
+func MakeVbo() VBO {
 	var vbo VBO
 	gl.GenBuffers(1, &vbo.handle)
 	return vbo
 }
 
-func (vbo VBO) bind() {
+func (vbo VBO) Bind() {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo.handle)
 }
 
-func (vbo VBO) buffer(data []float32) {
+func (vbo VBO) Buffer(data []float32) {
 	gl.BufferData(gl.ARRAY_BUFFER, len(data)*FLOAT_SIZE, gl.Ptr(data), gl.STATIC_DRAW)
 }
 
-func updateShaderVars(program uint32) ShaderConfig {
+func UpdateShaderVars(program uint32) ShaderConfig {
 	// this only affects the *current* vao bound to glArrayBuffer
 
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
@@ -206,7 +206,7 @@ func saveImage(img image.Image, name string) {
 	}
 }
 
-func makeSquareVertices(pixelWidth, pixelHeight int) []float32 {
+func MakeSquareVertices(pixelWidth, pixelHeight int) []float32 {
 	fWidth := float32(pixelWidth)
 	fHeight := float32(pixelHeight)
 
@@ -220,7 +220,7 @@ func makeSquareVertices(pixelWidth, pixelHeight int) []float32 {
 	}
 }
 
-func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMax float32) []float32 {
+func MakeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMax float32) []float32 {
 	fWidth := float32(pixelWidth)
 	fHeight := float32(pixelHeight)
 
@@ -234,8 +234,8 @@ func makeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMa
 	}
 }
 
-var screenVertices = makeSquareVertices(windowWidth, windowHeight)
+var ScreenVertices = MakeSquareVertices(WindowWidth, WindowHeight)
 
-var levelVertices = makeSquareVertices(windowWidth*16, windowHeight*16)
+var LevelVertices = MakeSquareVertices(WindowWidth*16, WindowHeight*16)
 
-var squareVertices []float32 = makeSquareVertices(64, 64) // placeholder for cDrawable init
+var SquareVertices []float32 = MakeSquareVertices(64, 64) // placeholder for cDrawable init

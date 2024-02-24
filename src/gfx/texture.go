@@ -1,4 +1,4 @@
-package main
+package gfx
 
 import (
 	"fmt"
@@ -25,8 +25,8 @@ const (
 var _TEXTURE_MGR_LOCK = &sync.Mutex{} // i dont think opengl can run outside main thread. if it can, lock down methods
 var textureMgrPtr *TextureManager
 
-func initMainTexture() {
-	texMgr := getTextureManager()
+func InitMainTexture() {
+	texMgr := GetTextureManager()
 	texArray := makeTextureArray(
 		[3]uint32{SIZE_TEX_MAIN_X, SIZE_TEX_MAIN_Y, SIZE_TEX_MAIN_Z},
 	)
@@ -43,7 +43,7 @@ func initMainTexture() {
 	}
 }
 
-func getTextureManager() *TextureManager {
+func GetTextureManager() *TextureManager {
 	if textureMgrPtr == nil {
 		_TEXTURE_MGR_LOCK.Lock()
 		defer _TEXTURE_MGR_LOCK.Unlock()
@@ -110,17 +110,17 @@ func (texMgr *TextureManager) register(texArray TextureArray, textureIx TextureS
 	return nil
 }
 
-func (texMgr *TextureManager) getTextureHandle(ix TextureSlot) uint32 {
+func (texMgr *TextureManager) GetTextureHandle(ix TextureSlot) uint32 {
 	return texMgr.textureHandles[ix]
 }
 
-func (texMgr *TextureManager) getTextureSize(slotIx TextureSlot, arrayIx int) (float32, float32) {
+func (texMgr *TextureManager) GetTextureSize(slotIx TextureSlot, arrayIx int) (float32, float32) {
 	rect := texMgr.textureArrays[slotIx].sheets[arrayIx].Bounds()
 	return float32(rect.Max.X), float32(rect.Max.Y)
 }
 
-func (texMgr *TextureManager) free(textureIx TextureSlot) {
-	handle := texMgr.getTextureHandle(textureIx)
+func (texMgr *TextureManager) Free(textureIx TextureSlot) {
+	handle := texMgr.GetTextureHandle(textureIx)
 	gl.DeleteTextures(1, &handle)
 	texMgr.allocMask[textureIx] = false
 }

@@ -1,9 +1,10 @@
-package main
+package ec
 
 import (
 	"sync"
 
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/whaleymar/knight-fortress/src/gfx"
 )
 
 // TODO
@@ -35,7 +36,7 @@ const (
 // }
 
 // eventually this will take a level config file which contains all the component data
-func makeLevelEntity() Entity {
+func MakeLevelEntity() Entity {
 	entity := Entity{
 		0,
 		"Level",
@@ -44,13 +45,13 @@ func makeLevelEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.add(&cDrawable{
+	entity.components.Add(&CDrawable{
 		// levelVertices,
-		screenVertices,
-		makeVao(),
-		makeVbo(),
+		gfx.ScreenVertices,
+		gfx.MakeVao(),
+		gfx.MakeVbo(),
 		makeLevelSprite(makeStaticAnimationManager()),
-		TEX_MAIN,
+		gfx.TEX_MAIN,
 		&sync.RWMutex{},
 		true, // isUvUpdateNeeded
 	})

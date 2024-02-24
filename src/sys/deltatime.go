@@ -1,4 +1,4 @@
-package main
+package sys
 
 import (
 	"sync"
@@ -13,7 +13,7 @@ type deltaTime struct {
 	value        float32
 }
 
-func (dt *deltaTime) update() {
+func (dt *deltaTime) Update() {
 	_DELTATIME_LOCK.Lock()
 	defer _DELTATIME_LOCK.Unlock()
 	currentTime := time.Now()
@@ -21,6 +21,6 @@ func (dt *deltaTime) update() {
 	dt.previousTime = currentTime
 }
 
-func (dt *deltaTime) get() float32 {
+func (dt *deltaTime) Get() float32 {
 	return dt.value
 }

@@ -4,8 +4,6 @@ short term:
     - 2d texture array
     - organize code into folders
 
-- physics/motion scalars should be scaled by window size
-    - I should do all calculations in texel coordinates
 - physics/collision component(s?)
 - gravity
 - jumping
