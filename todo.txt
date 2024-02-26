@@ -1,5 +1,9 @@
 short term:
 - physics/collision component(s?)
+    - better collision resolution
+    - more accurate bounding boxes
+    - figure out how forces/acceleration should work
+    - circle colliders + collision between different shapes
 - gravity
 - jumping
 - unloading entities (mainly need to free opengl vars)

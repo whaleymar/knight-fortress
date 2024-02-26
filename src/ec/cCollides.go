@@ -6,17 +6,20 @@ import (
 	// "github.com/go-gl/mathgl/mgl32"
 	"fmt"
 
+	// "github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/phys"
 )
 
 // TODO should just store a position here because it won't always match the entity position origin?
 type CCollides struct {
-	shape       phys.AABB
+	collider    phys.Collider
 	isRigidBody bool
 	// bounciness, weight
 }
 
-func (comp *CCollides) update(entity *Entity) {}
+func (comp *CCollides) update(entity *Entity) {
+	comp.collider.SetPosition(comp.collider.CalculateCenter(entity.GetPosition()))
+}
 
 func (comp *CCollides) getType() ComponentType {
 	return CMP_COLLIDES
@@ -29,44 +32,48 @@ func TryCollideDynamic(entity, other *Entity) {
 	// 	1.0,
 	// }
 	// (*moveComponent1).velocity = force.Apply((*moveComponent1).velocity)
-	colliderEntity := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, entity)
-	movableEntity := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, entity)
-	nextPosEntity := movableEntity.GetNextPosition(entity)
-
-	colliderOther := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, other)
-	movableOther := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, other)
-	nextPosOther := movableOther.GetNextPosition(other)
-
-	willCollide := phys.CheckCollision(nextPosEntity, nextPosOther, colliderEntity.shape, colliderOther.shape)
-	if !willCollide {
-		return
-	}
-	fmt.Printf("Dynamic Collision between %s and %s\n", entity.name, other.name)
+	// collidesEntity := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, entity)
+	// movableEntity := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, entity)
+	// nextPosEntity := movableEntity.GetNextPosition(entity)
+	//
+	// collidesOther := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, other)
+	// movableOther := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, other)
+	// nextPosOther := movableOther.GetNextPosition(other)
+	//
+	// willCollide, _ := phys.CheckCollision(nextPosEntity, nextPosOther, colliderEntity.shape, colliderOther.shape)
+	// if !willCollide {
+	// 	return
+	// }
+	// fmt.Printf("Dynamic Collision between %s and %s\n", entity.name, other.name)
 
 	// TODO handle non-rigid body
 
 }
 
 func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
-	colliderStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)
+	collidesStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)
 
-	colliderMovable := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, movableEntity)
+	collidesMovable := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, movableEntity)
 	moveComponent := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, movableEntity)
-	nextPos := moveComponent.GetNextPosition(movableEntity)
+	// nextPos := moveComponent.GetNextPosition(movableEntity) // TODO
 
-	willCollide := phys.CheckCollision(staticEntity.GetPosition(), nextPos, colliderStatic.shape, colliderMovable.shape)
-	if !willCollide {
+	aabb, ok := (collidesStatic.collider).(*phys.AABB) // TODO can I write a method which gives me the function pointer?
+	if !ok {
+		fmt.Println("not aabb")
 		return
 	}
-	fmt.Printf("Collision between Static %s and Dynamic %s\n", staticEntity.name, movableEntity.name)
+	hit := collidesMovable.collider.CheckCollisionAABB(aabb)
+	if !hit.IsHit {
+		return
+	}
 
-	// determine direction of collision based on dot product of velocity and direction
-	// direction := movableEntity.GetPosition().Sub(staticEntity.GetPosition()).Normalize()
-	// let's get something basic working
-	// acceleration still gets added to speed during movement.Update() so player can force their way into things
-	moveComponent.velocity[0] = 0.0
-	moveComponent.velocity[1] = 0.0
-	moveComponent.accel[0] = 0.0
-	moveComponent.accel[1] = 0.0
-
+	// fmt.Println(collidesMovable.collider.GetPosition())
+	// fmt.Println(hit.Delta)
+	// fmt.Println(hit.Position)
+	// fmt.Println(hit.Normal, "\n")
+	if hit.Normal.X != 0 {
+		moveComponent.velocity[0] = 0.0
+	} else {
+		moveComponent.velocity[1] = 0.0
+	}
 }

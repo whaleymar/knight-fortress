@@ -26,11 +26,12 @@ const (
 )
 
 type CMovable struct {
-	velocity         mgl32.Vec3
-	accel            mgl32.Vec3
-	speedMax         float32
-	isFrictionActive bool
-	followTarget     *Entity
+	velocity           mgl32.Vec3
+	accel              mgl32.Vec3
+	speedMax           float32
+	isFrictionActive   bool
+	followTarget       *Entity
+	isPlayerControlled bool
 }
 
 func (comp *CMovable) update(entity *Entity) {
@@ -70,16 +71,26 @@ func (comp *CMovable) IsMoving() bool {
 	return comp.velocity[0] != 0.0 || comp.velocity[1] != 0.0
 }
 
+func (comp *CMovable) IsAccelerating() bool {
+	return comp.accel[0] != 0.0 || comp.accel[1] != 0.0
+}
+
 func (comp *CMovable) updateKinematics(entity *Entity) {
 	speedMax := comp.speedMax
 	velocityMax := float32(speedMax)
 	velocityMin := float32(-speedMax)
 	zerof := float32(0)
 
+	accel := comp.accel
+	if comp.isPlayerControlled {
+		accel = accel.Add(GetControllerAccel())
+	}
+
+	entity.SetPosition(comp.GetNextPosition(entity))
 	// if not accelerating, apply friction
 	for i := 0; i < 2; i++ {
-		if comp.accel[i] != zerof {
-			comp.velocity[i] += comp.accel[i]
+		if accel[i] != zerof {
+			comp.velocity[i] += accel[i]
 			comp.velocity[i] = math.Clamp(comp.velocity[i], velocityMin, velocityMax)
 		} else if comp.velocity[i] != zerof && comp.isFrictionActive {
 			comp.velocity[i] *= (1 - phys.PHYSICS_FRICTION_COEF)
@@ -89,7 +100,6 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 		}
 	}
 
-	entity.SetPosition(comp.GetNextPosition(entity))
 }
 
 func (comp *CMovable) GetNextPosition(entity *Entity) mgl32.Vec3 {

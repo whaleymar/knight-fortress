@@ -37,6 +37,7 @@ func makeCameraEntity() Entity {
 		mgl32.InfPos,
 		false,
 		GetPlayerPtr(),
+		false,
 	})
 
 	return entity

@@ -9,3 +9,8 @@ const (
 	PHYSICS_MIN_SPEED       = float32(0.0001)
 	ACCEL_PLAYER_DEFAULT    = float32(0.5)
 )
+
+type Point struct {
+	X float32
+	Y float32
+}

@@ -64,10 +64,11 @@ func makePlayerEntity() Entity {
 		phys.PHYSICS_PLAYER_SPEEDMAX,
 		true, // frictionActive
 		nil,
+		true,
 	})
 
 	entity.components.Add(&CCollides{
-		phys.AABB{X: 0.5, Y: 0.5},
+		&phys.AABB{phys.Point{0.25, 0.25}, phys.Point{0.25, 0.25}}, // TODO hard coded
 		true,
 	})
 
@@ -114,61 +115,38 @@ func makeAnimation(offsetX, offsetY, frameCount int) Animation {
 	}
 }
 
+var _CONTROLLER_LOCK = &sync.RWMutex{}
+var controllerAcceleration mgl32.Vec3
+
+func GetControllerAccel() mgl32.Vec3 {
+	_CONTROLLER_LOCK.RLock()
+	defer _CONTROLLER_LOCK.RUnlock()
+	return controllerAcceleration
+}
+
 func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Repeat {
 		return
 	}
 
-	// var accel float32
-	// if action == glfw.Release {
-	// 	// sets accel in that direction to zero
-	// 	accel = -phys.ACCEL_PLAYER_DEFAULT
-	// } else {
-	// 	accel = phys.ACCEL_PLAYER_DEFAULT
-	// }
-	//
-	// player := GetPlayerPtr()
-	//
-	// var moveComponent *CMovable
-	// if tmp, err := GetComponent[*CMovable](CMP_MOVABLE, player); err != nil {
-	// 	return
-	// } else {
-	// 	moveComponent = *tmp
-	// }
-	// switch key {
-	// case glfw.KeyW:
-	// 	moveComponent.accel[1] += accel
-	// case glfw.KeyS:
-	// 	moveComponent.accel[1] -= accel
-	// case glfw.KeyA:
-	// 	moveComponent.accel[0] -= accel
-	// case glfw.KeyD:
-	// 	moveComponent.accel[0] += accel
-	// }
-	player := GetPlayerPtr()
-	var moveComponent *CMovable
-	if tmp, err := GetComponent[*CMovable](CMP_MOVABLE, player); err != nil {
-		return
-	} else {
-		moveComponent = *tmp
-	}
-
 	var multiplier float32
 	if action == glfw.Release {
 		// sets accel in that direction to zero
-		multiplier = 0.0
+		multiplier = -1.0
 	} else {
 		multiplier = 1.0
 	}
 
+	_CONTROLLER_LOCK.Lock()
+	defer _CONTROLLER_LOCK.Unlock()
 	switch key {
 	case glfw.KeyW:
-		moveComponent.accel[1] = phys.ACCEL_PLAYER_DEFAULT * multiplier
+		controllerAcceleration[1] += phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyS:
-		moveComponent.accel[1] = -phys.ACCEL_PLAYER_DEFAULT * multiplier
+		controllerAcceleration[1] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyA:
-		moveComponent.accel[0] = -phys.ACCEL_PLAYER_DEFAULT * multiplier
+		controllerAcceleration[0] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyD:
-		moveComponent.accel[0] = phys.ACCEL_PLAYER_DEFAULT * multiplier
+		controllerAcceleration[0] += phys.ACCEL_PLAYER_DEFAULT * multiplier
 	}
 }
