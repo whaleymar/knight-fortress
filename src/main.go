@@ -64,8 +64,12 @@ func main() {
 
 	entityManager.Add(ec.GetPlayerPtr())
 	entityManager.Add(ec.GetCameraPtr())
-	entity := ec.MakeLevelEntity()
-	entityManager.Add(&entity)
+
+	level := ec.MakeLevelEntity()
+	entityManager.Add(&level)
+
+	platform := ec.MakePlatformBasic()
+	entityManager.Add(&platform)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -84,14 +88,53 @@ func main() {
 	go updateFPS(fpsCh)
 
 	for !window.ShouldClose() {
+		// fmt.Println(entityManager.Len())
 		sys.DeltaTime.Update()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
 		fpsCh <- 1 / sys.DeltaTime.Get()
-
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
 
+		// Physics
+
+		// This should be more efficient than checking collision for all colliders
+		// since first we check if 1. a collider is movable and 2. it is moving
+		// TODO this should go in its own function and run in parallel
+		physicsEntities := entityManager.GetEntitiesWithComponent(ec.CMP_COLLIDES)
+		movableColliders := entityManager.GetEntitiesWithManyComponents(ec.CMP_COLLIDES, ec.CMP_MOVABLE)
+		for _, movableEntity := range movableColliders {
+			moveComponent := *ec.GetComponentUnsafe[*ec.CMovable](ec.CMP_MOVABLE, movableEntity)
+			if !moveComponent.IsMoving() {
+				continue
+			}
+			for _, otherEntity := range physicsEntities {
+				if movableEntity.Equals(otherEntity) {
+					continue
+				}
+				// check if other is movable
+				otherMoveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, otherEntity)
+				if err != nil {
+					// collision between moving and static object
+					ec.TryCollideStaticDynamic(otherEntity, movableEntity)
+				} else {
+					// if both are moving, need to make sure I haven't already simulated collision -> uid reflects order within entity manager
+					if movableEntity.GetId() > otherEntity.GetId() && (*otherMoveComponent).IsMoving() {
+						continue
+					}
+					// collision between 2 moving objects
+					ec.TryCollideDynamic(otherEntity, movableEntity)
+				}
+			}
+		}
+		// for i := 0; i < len(physicsEntities)-1; i++ {
+		// 	for j := i + 1; j < len(physicsEntities); j++ {
+		// 		ec.TryCollide(physicsEntities[i], physicsEntities[j])
+		// 		// ec.TryCollide(physicsEntities[j], physicsEntities[i])
+		// 	}
+		// }
+
+		// Everything else
 		for _, entity := range entityManager.GetEntitiesWithComponent(ec.CMP_ANY) {
 			entity.GetComponentManager().Update(entity)
 		}

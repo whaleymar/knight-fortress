@@ -12,3 +12,7 @@ func Clamp[T Ordered](val, minVal, maxVal T) T {
 	}
 	return val
 }
+
+func Between[T Ordered](minVal, val, maxVal T) bool {
+	return val >= minVal && val <= maxVal
+}

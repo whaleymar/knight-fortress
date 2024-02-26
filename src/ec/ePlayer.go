@@ -66,6 +66,11 @@ func makePlayerEntity() Entity {
 		nil,
 	})
 
+	entity.components.Add(&CCollides{
+		phys.AABB{X: 0.5, Y: 0.5},
+		true,
+	})
+
 	return entity
 }
 
@@ -114,30 +119,56 @@ func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 		return
 	}
 
-	var accel float32
-	if action == glfw.Release {
-		// sets accel in that direction to zero
-		accel = -phys.ACCEL_PLAYER_DEFAULT
-	} else {
-		accel = phys.ACCEL_PLAYER_DEFAULT
-	}
-
+	// var accel float32
+	// if action == glfw.Release {
+	// 	// sets accel in that direction to zero
+	// 	accel = -phys.ACCEL_PLAYER_DEFAULT
+	// } else {
+	// 	accel = phys.ACCEL_PLAYER_DEFAULT
+	// }
+	//
+	// player := GetPlayerPtr()
+	//
+	// var moveComponent *CMovable
+	// if tmp, err := GetComponent[*CMovable](CMP_MOVABLE, player); err != nil {
+	// 	return
+	// } else {
+	// 	moveComponent = *tmp
+	// }
+	// switch key {
+	// case glfw.KeyW:
+	// 	moveComponent.accel[1] += accel
+	// case glfw.KeyS:
+	// 	moveComponent.accel[1] -= accel
+	// case glfw.KeyA:
+	// 	moveComponent.accel[0] -= accel
+	// case glfw.KeyD:
+	// 	moveComponent.accel[0] += accel
+	// }
 	player := GetPlayerPtr()
-
 	var moveComponent *CMovable
 	if tmp, err := GetComponent[*CMovable](CMP_MOVABLE, player); err != nil {
 		return
 	} else {
 		moveComponent = *tmp
 	}
+
+	var multiplier float32
+	if action == glfw.Release {
+		// sets accel in that direction to zero
+		multiplier = 0.0
+	} else {
+		multiplier = 1.0
+	}
+
 	switch key {
 	case glfw.KeyW:
-		moveComponent.accel[1] += accel
+		moveComponent.accel[1] = phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyS:
-		moveComponent.accel[1] -= accel
+		moveComponent.accel[1] = -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyA:
-		moveComponent.accel[0] -= accel
+		moveComponent.accel[0] = -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyD:
-		moveComponent.accel[0] += accel
+		moveComponent.accel[0] = phys.ACCEL_PLAYER_DEFAULT * multiplier
 	}
 }

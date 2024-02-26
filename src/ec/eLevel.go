@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/gfx"
+	// "github.com/whaleymar/knight-fortress/src/phys"
 )
 
 // TODO
@@ -55,6 +56,11 @@ func MakeLevelEntity() Entity {
 		&sync.RWMutex{},
 		true, // isUvUpdateNeeded
 	})
+
+	// entity.components.Add(&CCollides{
+	// 	phys.AABB{X: 10.0, Y: 8.0},
+	// 	false,
+	// })
 
 	return entity
 

@@ -1,9 +1,4 @@
-
 short term:
-- clean up code (especially for textures)
-    - 2d texture array
-    - organize code into folders
-
 - physics/collision component(s?)
 - gravity
 - jumping
@@ -15,7 +10,6 @@ short term:
 when I need it:
 - event flow system
 - text rendering
-
-long term:
+- 2d texture array
 - entity config files + hot reloading
 - parallel everything

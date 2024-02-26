@@ -12,6 +12,7 @@ type ComponentType int
 const (
 	CMP_ANY ComponentType = iota
 	CMP_DRAWABLE
+	CMP_COLLIDES
 	CMP_MOVABLE
 )
 
@@ -44,7 +45,15 @@ func (entity *Entity) GetComponentManager() ComponentManager {
 }
 
 func (entity *Entity) String() string {
-	return string(fmt.Sprint(entity.uid))
+	return string(fmt.Sprint(entity.name))
+}
+
+func (entity *Entity) Equals(other *Entity) bool {
+	return entity.uid == other.uid
+}
+
+func (entity *Entity) GetId() uint64 {
+	return entity.uid
 }
 
 type EntityManager struct {
@@ -102,6 +111,10 @@ func (eMgr *EntityManager) Get(uid uint64) (*Entity, error) {
 	return nil, fmt.Errorf("Entity with ID %d not found", uid)
 }
 
+func (eMgr *EntityManager) Len() int {
+	return len(eMgr.entities)
+}
+
 func (eMgr *EntityManager) GetEntitiesWithComponent(enum ComponentType) []*Entity {
 	eMgr.rwlock.RLock()
 	defer eMgr.rwlock.RUnlock()
@@ -120,6 +133,34 @@ func (eMgr *EntityManager) GetEntitiesWithComponent(enum ComponentType) []*Entit
 	return entities
 }
 
+func (eMgr *EntityManager) GetEntitiesWithManyComponents(enums ...ComponentType) []*Entity {
+	eMgr.rwlock.RLock()
+	defer eMgr.rwlock.RUnlock()
+	// for _, entity := range eMgr.entities {
+	// 	fmt.Println(entity.name)
+	// }
+	// fmt.Println("\n")
+	entities := make([]*Entity, 0, len(eMgr.entities))
+
+	for _, entity := range eMgr.entities {
+		isValid := true
+		for _, enum := range enums {
+			_, err := entity.GetComponentManager().Get(enum)
+			if err != nil {
+				isValid = false
+				break
+			}
+		}
+		if isValid {
+			entities = append(entities, entity)
+		}
+	}
+	// for _, entity := range entities {
+	// 	fmt.Println(entity.name)
+	// }
+	return entities
+}
+
 // idk if i need multiple of these... maybe an event manager
 type ComponentManager interface {
 	Add(Component)
@@ -129,7 +170,7 @@ type ComponentManager interface {
 }
 
 type ComponentList struct {
-	components []Component
+	components []Component // TODO this should rarely update and mostly be searched, so should be sorted + have binary search
 }
 
 type Component interface {

@@ -66,6 +66,10 @@ func (comp *CMovable) getType() ComponentType {
 	return CMP_MOVABLE
 }
 
+func (comp *CMovable) IsMoving() bool {
+	return comp.velocity[0] != 0.0 || comp.velocity[1] != 0.0
+}
+
 func (comp *CMovable) updateKinematics(entity *Entity) {
 	speedMax := comp.speedMax
 	velocityMax := float32(speedMax)
@@ -85,10 +89,10 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 		}
 	}
 
-	entity.SetPosition(comp.getStepDistance(entity))
+	entity.SetPosition(comp.GetNextPosition(entity))
 }
 
-func (comp *CMovable) getStepDistance(entity *Entity) mgl32.Vec3 {
+func (comp *CMovable) GetNextPosition(entity *Entity) mgl32.Vec3 {
 	return entity.GetPosition().Add(comp.velocity.Mul(sys.DeltaTime.Get()))
 }
 
@@ -108,7 +112,7 @@ func (comp *CMovable) setFollowVelocity(entity *Entity) {
 
 	distance := targetPos.Sub(curPosition)
 	comp.velocity = mgl32.Vec3{distance[0], distance[1], 0.0}.Mul(FOLLOW_SPEED_MULTIPLIER)
-	nextDistance := targetPos.Sub(comp.getStepDistance(entity))
+	nextDistance := targetPos.Sub(comp.GetNextPosition(entity))
 	newPosition := curPosition
 	newVelocity := comp.velocity
 

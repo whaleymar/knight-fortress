@@ -10,6 +10,7 @@ import (
 const (
 	DEPTH_BACKGROUND = iota
 	DEPTH_NPC
+	DEPTH_GROUND
 	DEPTH_PLAYER
 )
 
