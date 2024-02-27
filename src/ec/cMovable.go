@@ -2,7 +2,7 @@ package ec
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/whaleymar/knight-fortress/src/gfx"
+	// "github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
 	"github.com/whaleymar/knight-fortress/src/sys"
@@ -108,13 +108,6 @@ func (comp *CMovable) GetNextPosition(entity *Entity) mgl32.Vec3 {
 
 func (comp *CMovable) setFollowVelocity(entity *Entity) {
 	targetPos := comp.followTarget.GetPosition()
-	// entity.setPosition(targetPos)
-	if tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, comp.followTarget); err == nil {
-		drawComponent := *tmp
-		frameSizeX, frameSizeY := drawComponent.getFrameSize()
-		targetPos[0] += (frameSizeX * gfx.PixelsPerTexel / gfx.WindowWidth)
-		targetPos[1] += (frameSizeY * gfx.PixelsPerTexel / gfx.WindowHeight)
-	}
 	curPosition := entity.GetPosition()
 	if targetPos == curPosition {
 		return

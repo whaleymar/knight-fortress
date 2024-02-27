@@ -18,7 +18,8 @@ const (
 	// PixelsPerTexel = 6
 
 	// these convert world coordinates to screen coordinates, corrected for aspect ratio
-	WORLD_SCALE_RATIO = float32(3.2)
+	TEXELS_PER_METER  = float32(32)
+	WORLD_SCALE_RATIO = TEXELS_PER_METER / 10.0 // something something 10 meters across screen? 5?
 	TEXEL_SCALE_X     = float32(1.0 / (16.0 / WORLD_SCALE_RATIO))
 	TEXEL_SCALE_Y     = float32(1.0 / (9.0 / WORLD_SCALE_RATIO))
 )

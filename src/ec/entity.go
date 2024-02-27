@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/whaleymar/knight-fortress/src/gfx"
 )
 
 type ComponentType int
@@ -32,6 +33,21 @@ func (entity *Entity) GetPosition() mgl32.Vec3 {
 	entity.rwlock.RLock()
 	defer entity.rwlock.RUnlock()
 	return entity.position
+}
+
+func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
+	// if entity is drawable, return position of the bottom left point of its vertex array
+	position := entity.GetPosition()
+	tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, entity)
+	if err != nil {
+		return position
+	}
+	sizeX, sizeY := (*tmp).getFrameSize() // in texels
+	return mgl32.Vec3{
+		position[0] - sizeX/gfx.TEXELS_PER_METER/2.0,
+		position[1] - sizeY/gfx.TEXELS_PER_METER/2.0,
+		0.0,
+	}
 }
 
 func (entity *Entity) SetPosition(position mgl32.Vec3) {

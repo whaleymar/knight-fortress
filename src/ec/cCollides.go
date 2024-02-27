@@ -10,7 +10,6 @@ import (
 	"github.com/whaleymar/knight-fortress/src/phys"
 )
 
-// TODO should just store a position here because it won't always match the entity position origin?
 type CCollides struct {
 	collider    phys.Collider
 	isRigidBody bool
@@ -18,11 +17,35 @@ type CCollides struct {
 }
 
 func (comp *CCollides) update(entity *Entity) {
-	comp.collider.SetPosition(comp.collider.CalculateCenter(entity.GetPosition()))
+	comp.collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
 }
 
 func (comp *CCollides) getType() ComponentType {
 	return CMP_COLLIDES
+}
+
+func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
+	collidesStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)
+
+	collidesMovable := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, movableEntity)
+	moveComponent := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, movableEntity)
+	// nextPos := moveComponent.GetNextPosition(movableEntity) // TODO
+
+	aabb, ok := (collidesStatic.collider).(*phys.AABB) // TODO can I write a method which gives me the function pointer?
+	if !ok {
+		fmt.Println("not aabb")
+		return
+	}
+	hit := collidesMovable.collider.CheckCollisionAABB(aabb)
+	if !hit.IsHit {
+		return
+	}
+
+	if hit.Normal.X != 0 {
+		moveComponent.velocity[0] = 0.0
+	} else {
+		moveComponent.velocity[1] = 0.0
+	}
 }
 
 func TryCollideDynamic(entity, other *Entity) {
@@ -48,32 +71,4 @@ func TryCollideDynamic(entity, other *Entity) {
 
 	// TODO handle non-rigid body
 
-}
-
-func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
-	collidesStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)
-
-	collidesMovable := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, movableEntity)
-	moveComponent := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, movableEntity)
-	// nextPos := moveComponent.GetNextPosition(movableEntity) // TODO
-
-	aabb, ok := (collidesStatic.collider).(*phys.AABB) // TODO can I write a method which gives me the function pointer?
-	if !ok {
-		fmt.Println("not aabb")
-		return
-	}
-	hit := collidesMovable.collider.CheckCollisionAABB(aabb)
-	if !hit.IsHit {
-		return
-	}
-
-	// fmt.Println(collidesMovable.collider.GetPosition())
-	// fmt.Println(hit.Delta)
-	// fmt.Println(hit.Position)
-	// fmt.Println(hit.Normal, "\n")
-	if hit.Normal.X != 0 {
-		moveComponent.velocity[0] = 0.0
-	} else {
-		moveComponent.velocity[1] = 0.0
-	}
 }

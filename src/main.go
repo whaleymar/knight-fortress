@@ -152,10 +152,10 @@ func main() {
 			return cmp.Compare(e1.GetPosition().Z(), e2.GetPosition().Z())
 		})
 		for _, entity := range drawableEntities {
-			// if entity.name == "Player" {
-			// 	fmt.Println(entity.getPosition())
+			// if entity.String() == "Player" {
+			// 	fmt.Println(entity.GetPosition())
 			// }
-			screenCoords := ec.GetScreenCoordinates(entity.GetPosition())
+			screenCoords := ec.GetScreenCoordinates(entity.GetBottomLeftPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
 			drawComponent := *ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, entity)
 

@@ -13,7 +13,7 @@ func MakePlatformBasic() Entity {
 		0,
 		"Platform",
 		&ComponentList{},
-		mgl32.Vec3{-3.0, 0.0, DEPTH_GROUND},
+		mgl32.Vec3{-15.0, 0.0, DEPTH_GROUND},
 		&sync.RWMutex{},
 	}
 
@@ -32,7 +32,7 @@ func MakePlatformBasic() Entity {
 	})
 
 	entity.components.Add(&CCollides{
-		&phys.AABB{phys.Point{0.25, 0.25}, phys.Point{0.25, 0.25}}, // TODO hard coded
+		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded
 		true,
 	})
 
