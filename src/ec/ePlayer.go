@@ -69,7 +69,7 @@ func makePlayerEntity() Entity {
 
 	entity.components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded size -- would be nice to have a method that converts sprites to AABB
-		true,
+		phys.RIGIDBODY_DYNAMIC,
 	})
 
 	return entity

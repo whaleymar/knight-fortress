@@ -4,7 +4,7 @@ import (
 	// "fmt"
 
 	// "github.com/go-gl/mathgl/mgl32"
-	"fmt"
+	// "fmt"
 
 	// "github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl32"
@@ -12,8 +12,8 @@ import (
 )
 
 type CCollides struct {
-	collider    phys.Collider
-	isRigidBody bool
+	collider  phys.Collider
+	rigidBody phys.RigidBodyType
 	// bounciness, weight
 }
 
@@ -36,25 +36,20 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 	nextPoint := phys.Vec2Point(moveComponent.GetNextPosition(movableEntity))
 	collidesMovable.collider.SetPosition(nextPoint)
 
-	aabb, ok := (collidesStatic.collider).(*phys.AABB) // TODO can I write a method which gives me the function pointer?
-	if !ok {
-		fmt.Println("not aabb")
-		return
-	}
-	hit := collidesMovable.collider.CheckCollisionAABB(aabb)
+	hit := collidesMovable.collider.CheckCollision(&collidesStatic.collider)
 
 	if !hit.IsHit {
 		// reset position
 		collidesMovable.collider.SetPosition(initialPoint)
 		return
 	}
-	fmt.Println(movableEntity.GetPosition(), hit)
 
+	// stop movement in that direction and correct position
 	var newPoint phys.Point
 	if hit.Normal.X != 0 && hit.Normal.Y != 0 {
 		moveComponent.velocity[0] = 0.0
 		moveComponent.velocity[1] = 0.0
-		newPoint = initialPoint
+		newPoint = nextPoint.Sub(hit.Delta)
 	} else if hit.Normal.X != 0 {
 		moveComponent.velocity[0] = 0.0
 		newPoint = phys.Point{nextPoint.X - hit.Delta.X, initialPoint.Y}
@@ -63,7 +58,6 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 		newPoint = phys.Point{initialPoint.X, nextPoint.Y - hit.Delta.Y}
 	}
 
-	// newPoint := collidesMovable.collider.GetPosition().Sub(hit.Delta)
 	collidesMovable.collider.SetPosition(newPoint)
 	movableEntity.SetPosition(mgl32.Vec3{newPoint.X, newPoint.Y, movableEntity.GetPosition()[2]})
 }

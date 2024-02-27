@@ -101,6 +101,7 @@ func main() {
 		// This should be more efficient than checking collision for all colliders
 		// since first we check if 1. a collider is movable and 2. it is moving
 		// TODO this should go in its own function and run in parallel
+		// TODO can use rigidbodytype instead of cmp-movable?
 		physicsEntities := entityManager.GetEntitiesWithComponent(ec.CMP_COLLIDES)
 		movableColliders := entityManager.GetEntitiesWithManyComponents(ec.CMP_COLLIDES, ec.CMP_MOVABLE)
 		for _, movableEntity := range movableColliders {

@@ -33,7 +33,7 @@ func MakePlatformBasic() Entity {
 
 	entity.components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded
-		true,
+		phys.RIGIDBODY_STATIC,
 	})
 
 	return entity

@@ -1,26 +1,28 @@
 package phys
 
 import (
-	// "fmt"
+	"fmt"
+
+	"reflect"
 
 	"github.com/go-gl/mathgl/mgl32"
 
 	"github.com/whaleymar/knight-fortress/src/math"
 )
 
-type CollisionDirection int
+type RigidBodyType int
 
 const (
-	COLLIDE_NONE CollisionDirection = iota
-	COLLIDE_HORIZONTAL
-	COLLIDE_VERTICAL
-	COLLIDE_HV
+	RIGIDBODY_NONE RigidBodyType = iota
+	RIGIDBODY_STATIC
+	RIGIDBODY_DYNAMIC
+	RIGIDBODY_KINEMATIC
 )
 
 type Collider interface {
 	SetPosition(Point)
 	GetPosition() Point
-	CalculateCenter(mgl32.Vec3) Point
+	CheckCollision(*Collider) Hit
 	CheckCollisionAABB(*AABB) Hit
 }
 
@@ -44,8 +46,15 @@ func (this *AABB) SetPosition(pos Point) {
 	this.Center = pos
 }
 
-func (this *AABB) CalculateCenter(entityPos mgl32.Vec3) Point {
-	return Point{this.Half.X + entityPos[0], this.Half.Y + entityPos[1]}
+func (this *AABB) CheckCollision(other *Collider) Hit {
+	switch (*other).(type) {
+	case *AABB:
+		aabb := (*other).(*AABB)
+		return this.CheckCollisionAABB(aabb)
+	default:
+		panic(fmt.Sprintf("Collision check not implemented for collider with type %v", reflect.TypeOf(other)))
+
+	}
 }
 
 func (this *AABB) CheckCollisionAABB(other *AABB) Hit {
