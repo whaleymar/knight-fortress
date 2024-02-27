@@ -21,6 +21,10 @@ func (p Point) Add(p2 Point) Point {
 	return Point{p.X + p2.X, p.Y + p2.Y}
 }
 
+func (p Point) Sub(p2 Point) Point {
+	return Point{p.X - p2.X, p.Y - p2.Y}
+}
+
 func Vec2Point(vec mgl32.Vec3) Point {
 	return Point{vec[0], vec[1]}
 }
