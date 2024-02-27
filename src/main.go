@@ -105,7 +105,7 @@ func main() {
 		movableColliders := entityManager.GetEntitiesWithManyComponents(ec.CMP_COLLIDES, ec.CMP_MOVABLE)
 		for _, movableEntity := range movableColliders {
 			moveComponent := *ec.GetComponentUnsafe[*ec.CMovable](ec.CMP_MOVABLE, movableEntity)
-			if !moveComponent.IsMoving() && !moveComponent.IsAccelerating() {
+			if !moveComponent.IsMoving() {
 				continue
 			}
 			for _, otherEntity := range physicsEntities {
@@ -119,7 +119,7 @@ func main() {
 					ec.TryCollideStaticDynamic(otherEntity, movableEntity)
 				} else {
 					// if both are moving, need to make sure I haven't already simulated collision -> uid reflects order within entity manager
-					if movableEntity.GetId() > otherEntity.GetId() && ((*otherMoveComponent).IsMoving() || (*otherMoveComponent).IsAccelerating()) {
+					if movableEntity.GetId() > otherEntity.GetId() && (*otherMoveComponent).IsMoving() {
 						continue
 					}
 					// collision between 2 moving objects

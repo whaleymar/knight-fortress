@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	// "github.com/go-gl/mathgl/mgl32"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/phys"
 )
 
@@ -29,7 +30,10 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 
 	collidesMovable := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, movableEntity)
 	moveComponent := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, movableEntity)
+
+	// check next position
 	// nextPos := moveComponent.GetNextPosition(movableEntity) // TODO
+	// collidesMovable.collider.SetPosition(phys.Vec2Point(nextPos))
 
 	aabb, ok := (collidesStatic.collider).(*phys.AABB) // TODO can I write a method which gives me the function pointer?
 	if !ok {
@@ -37,11 +41,21 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 		return
 	}
 	hit := collidesMovable.collider.CheckCollisionAABB(aabb)
+
+	// reset position
+	// collidesMovable.collider.SetPosition(phys.Vec2Point(movableEntity.GetPosition()))
 	if !hit.IsHit {
 		return
 	}
+	fmt.Println(hit)
+	newPoint := collidesMovable.collider.GetPosition().Add(hit.Delta)
+	collidesMovable.collider.SetPosition(newPoint)
+	movableEntity.SetPosition(mgl32.Vec3{newPoint.X, newPoint.Y, movableEntity.GetPosition()[2]})
 
-	if hit.Normal.X != 0 {
+	if hit.Normal.X != 0 && hit.Normal.Y != 0 {
+		moveComponent.velocity[0] = 0.0
+		moveComponent.velocity[1] = 0.0
+	} else if hit.Normal.X != 0 {
 		moveComponent.velocity[0] = 0.0
 	} else {
 		moveComponent.velocity[1] = 0.0

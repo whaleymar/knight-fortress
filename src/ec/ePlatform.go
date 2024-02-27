@@ -13,7 +13,7 @@ func MakePlatformBasic() Entity {
 		0,
 		"Platform",
 		&ComponentList{},
-		mgl32.Vec3{-15.0, 0.0, DEPTH_GROUND},
+		mgl32.Vec3{-8.0, 0.0, DEPTH_GROUND},
 		&sync.RWMutex{},
 	}
 
