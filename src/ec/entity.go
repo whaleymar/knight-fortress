@@ -32,8 +32,8 @@ func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
 	}
 	sizeX, sizeY := (*tmp).getFrameSize() // in texels
 	return mgl32.Vec3{
-		position[0] - sizeX/gfx.TEXELS_PER_METER/2.0,
-		position[1] - sizeY/gfx.TEXELS_PER_METER/2.0,
+		position[0] - sizeX/gfx.TEXELS_PER_METER/2.0*(*tmp).scale[0],
+		position[1] - sizeY/gfx.TEXELS_PER_METER/2.0*(*tmp).scale[1],
 		0.0,
 	}
 }

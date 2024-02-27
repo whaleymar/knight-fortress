@@ -51,6 +51,7 @@ func MakeLevelEntity() Entity {
 		gfx.ScreenVertices,
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
+		SCALE_NORMAL,
 		makeLevelSprite(makeStaticAnimationManager()),
 		gfx.TEX_MAIN,
 		&sync.RWMutex{},

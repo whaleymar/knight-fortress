@@ -128,12 +128,6 @@ func main() {
 				}
 			}
 		}
-		// for i := 0; i < len(physicsEntities)-1; i++ {
-		// 	for j := i + 1; j < len(physicsEntities); j++ {
-		// 		ec.TryCollide(physicsEntities[i], physicsEntities[j])
-		// 		// ec.TryCollide(physicsEntities[j], physicsEntities[i])
-		// 	}
-		// }
 
 		// Everything else
 		for _, entity := range entityManager.GetEntitiesWithComponent(ec.CMP_ANY) {

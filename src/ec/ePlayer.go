@@ -52,6 +52,7 @@ func makePlayerEntity() Entity {
 		gfx.SquareVertices,
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
+		SCALE_NORMAL,
 		makePlayerSprite(makePlayerAnimationManager()),
 		gfx.TEX_MAIN,
 		&sync.RWMutex{},

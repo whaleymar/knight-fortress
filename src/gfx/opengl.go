@@ -206,30 +206,26 @@ func saveImage(img image.Image, name string) {
 	}
 }
 
-func MakeSquareVertices(pixelWidth, pixelHeight int) []float32 {
-	fWidth := float32(pixelWidth)
-	fHeight := float32(pixelHeight)
+func MakeSquareVertices(pixelWidth, pixelHeight float32) []float32 {
 
 	return []float32{
-		0.0, fHeight, 0.0, 0.0, 0.0,
-		fWidth, fHeight, 0.0, 1.0, 0.0,
+		0.0, pixelHeight, 0.0, 0.0, 0.0,
+		pixelWidth, pixelHeight, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 0.0, 1.0,
-		fWidth, fHeight, 0.0, 1.0, 0.0,
-		fWidth, 0.0, 0.0, 1.0, 1.0,
+		pixelWidth, pixelHeight, 0.0, 1.0, 0.0,
+		pixelWidth, 0.0, 0.0, 1.0, 1.0,
 		0.0, 0.0, 0.0, 0.0, 1.0,
 	}
 }
 
-func MakeSquareVerticesWithUV(pixelWidth, pixelHeight int, xMin, xMax, yMin, yMax float32) []float32 {
-	fWidth := float32(pixelWidth)
-	fHeight := float32(pixelHeight)
+func MakeSquareVerticesWithUV(pixelWidth, pixelHeight, xMin, xMax, yMin, yMax float32) []float32 {
 
 	return []float32{
-		0.0, fHeight, 0.0, xMin, yMin,
-		fWidth, fHeight, 0.0, xMax, yMin,
+		0.0, pixelHeight, 0.0, xMin, yMin,
+		pixelWidth, pixelHeight, 0.0, xMax, yMin,
 		0.0, 0.0, 0.0, xMin, yMax,
-		fWidth, fHeight, 0.0, xMax, yMin,
-		fWidth, 0.0, 0.0, xMax, yMax,
+		pixelWidth, pixelHeight, 0.0, xMax, yMin,
+		pixelWidth, 0.0, 0.0, xMax, yMax,
 		0.0, 0.0, 0.0, xMin, yMax,
 	}
 }

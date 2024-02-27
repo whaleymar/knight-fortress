@@ -21,6 +21,7 @@ func MakePlatformBasic() Entity {
 		gfx.MakeSquareVertices(16, 16),
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
+		[2]float32{4.0, 1.0},
 		Sprite{
 			[3]int{0, 80, 0},
 			[2]int{16, 16},
@@ -32,7 +33,7 @@ func MakePlatformBasic() Entity {
 	})
 
 	entity.components.Add(&CCollides{
-		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded
+		&phys.AABB{phys.Point{}, phys.Point{1.0, 0.25}}, // TODO hard coded
 		phys.RIGIDBODY_STATIC,
 	})
 

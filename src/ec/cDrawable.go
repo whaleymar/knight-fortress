@@ -14,10 +14,13 @@ const (
 	DEPTH_PLAYER
 )
 
+var SCALE_NORMAL = [2]float32{1.0, 1.0}
+
 type CDrawable struct {
 	vertices         []float32
 	vao              gfx.VAO
 	vbo              gfx.VBO
+	scale            [2]float32
 	sprite           Sprite
 	textureIx        gfx.TextureSlot
 	rwlock           *sync.RWMutex
@@ -68,7 +71,7 @@ func (comp *CDrawable) update(entity *Entity) {
 		yMin = pixelOffset / sheetSizeY
 		yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / sheetSizeY
 
-		comp.vertices = gfx.MakeSquareVerticesWithUV(comp.sprite.frameSize[0]*gfx.PixelsPerTexel, comp.sprite.frameSize[1]*gfx.PixelsPerTexel, xMin, xMax, yMin, yMax)
+		comp.vertices = gfx.MakeSquareVerticesWithUV(float32(comp.sprite.frameSize[0]*gfx.PixelsPerTexel)*comp.scale[0], float32(comp.sprite.frameSize[1]*gfx.PixelsPerTexel)*comp.scale[1], xMin, xMax, yMin, yMax)
 	}
 	comp.isUvUpdateNeeded = false
 }
