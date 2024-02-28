@@ -12,6 +12,9 @@ const (
 	ACCEL_PLAYER_DEFAULT    = float32(0.5)
 )
 
+var PHYSICS_GRAVITY Force = &ImpulseForce{mgl32.Vec3{0, -1, 0}, 0.1}
+var ORIGIN mgl32.Vec3 = mgl32.Vec3{0.0, 0.0, 0.0}
+
 type Point struct {
 	X float32
 	Y float32

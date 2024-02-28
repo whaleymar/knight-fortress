@@ -13,12 +13,12 @@ func MakePlatformBasic() Entity {
 		0,
 		"Platform",
 		&ComponentList{},
-		mgl32.Vec3{-8.0, 0.0, DEPTH_GROUND},
+		mgl32.Vec3{0.0, -0.5, DEPTH_GROUND},
 		&sync.RWMutex{},
 	}
 
 	entity.components.Add(&CDrawable{
-		gfx.MakeSquareVertices(16, 16),
+		gfx.MakeRectVertices(16, 16),
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
 		[2]float32{4.0, 1.0},
@@ -35,6 +35,7 @@ func MakePlatformBasic() Entity {
 	entity.components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{1.0, 0.25}}, // TODO hard coded
 		phys.RIGIDBODY_STATIC,
+		true,
 	})
 
 	return entity

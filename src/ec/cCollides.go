@@ -12,13 +12,21 @@ import (
 )
 
 type CCollides struct {
-	collider  phys.Collider
-	rigidBody phys.RigidBodyType
+	collider   phys.Collider
+	RigidBody  phys.RigidBodyType
+	IsGrounded bool
 	// bounciness, weight
 }
 
 func (comp *CCollides) update(entity *Entity) {
-	comp.collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
+	if comp.RigidBody == phys.RIGIDBODY_DYNAMIC || comp.RigidBody == phys.RIGIDBODY_KINEMATIC {
+		comp.collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
+		if !comp.IsGrounded {
+			cmpMovable := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, entity)
+			cmpMovable.accel = phys.PHYSICS_GRAVITY.Apply(cmpMovable.accel)
+		}
+	}
+
 }
 
 func (comp *CCollides) getType() ComponentType {
@@ -41,6 +49,7 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 	if !hit.IsHit {
 		// reset position
 		collidesMovable.collider.SetPosition(initialPoint)
+		collidesMovable.IsGrounded = false
 		return
 	}
 
@@ -50,12 +59,15 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 		moveComponent.velocity[0] = 0.0
 		moveComponent.velocity[1] = 0.0
 		newPoint = nextPoint.Sub(hit.Delta)
+		collidesMovable.IsGrounded = true
 	} else if hit.Normal.X != 0 {
 		moveComponent.velocity[0] = 0.0
 		newPoint = phys.Point{nextPoint.X - hit.Delta.X, initialPoint.Y}
+		collidesMovable.IsGrounded = false
 	} else {
 		moveComponent.velocity[1] = 0.0
 		newPoint = phys.Point{initialPoint.X, nextPoint.Y - hit.Delta.Y}
+		collidesMovable.IsGrounded = true
 	}
 
 	collidesMovable.collider.SetPosition(newPoint)

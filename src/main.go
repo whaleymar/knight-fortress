@@ -65,11 +65,14 @@ func main() {
 	entityManager.Add(ec.GetPlayerPtr())
 	entityManager.Add(ec.GetCameraPtr())
 
-	level := ec.MakeLevelEntity()
-	entityManager.Add(&level)
+	// level := ec.MakeLevelEntity()
+	// entityManager.Add(&level)
 
 	platform := ec.MakePlatformBasic()
 	entityManager.Add(&platform)
+	platform2 := ec.MakePlatformBasic()
+	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
+	entityManager.Add(&platform2)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -147,9 +150,11 @@ func main() {
 			return cmp.Compare(e1.GetPosition().Z(), e2.GetPosition().Z())
 		})
 		for _, entity := range drawableEntities {
-			// if entity.String() == "Player" {
-			// 	fmt.Println(entity.GetPosition())
-			// }
+			if entity.String() == "Player" {
+				// fmt.Println(entity.GetPosition())
+				cmpCollision := *ec.GetComponentUnsafe[*ec.CCollides](ec.CMP_COLLIDES, entity)
+				fmt.Println(cmpCollision.IsGrounded)
+			}
 			screenCoords := ec.GetScreenCoordinates(entity.GetBottomLeftPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
 			drawComponent := *ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, entity)

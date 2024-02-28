@@ -71,6 +71,7 @@ func makePlayerEntity() Entity {
 	entity.components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded size -- would be nice to have a method that converts sprites to AABB
 		phys.RIGIDBODY_DYNAMIC,
+		true,
 	})
 
 	return entity
@@ -149,5 +150,7 @@ func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 		controllerAcceleration[0] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyD:
 		controllerAcceleration[0] += phys.ACCEL_PLAYER_DEFAULT * multiplier
+	case glfw.Key0:
+		GetPlayerPtr().SetPosition(phys.ORIGIN)
 	}
 }

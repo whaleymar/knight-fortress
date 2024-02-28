@@ -2,7 +2,6 @@ package ec
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	// "github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
 	"github.com/whaleymar/knight-fortress/src/sys"
@@ -99,6 +98,7 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 			}
 		}
 	}
+	comp.accel = mgl32.Vec3{}
 
 }
 

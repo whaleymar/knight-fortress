@@ -206,7 +206,7 @@ func saveImage(img image.Image, name string) {
 	}
 }
 
-func MakeSquareVertices(pixelWidth, pixelHeight float32) []float32 {
+func MakeRectVertices(pixelWidth, pixelHeight float32) []float32 {
 
 	return []float32{
 		0.0, pixelHeight, 0.0, 0.0, 0.0,
@@ -218,7 +218,7 @@ func MakeSquareVertices(pixelWidth, pixelHeight float32) []float32 {
 	}
 }
 
-func MakeSquareVerticesWithUV(pixelWidth, pixelHeight, xMin, xMax, yMin, yMax float32) []float32 {
+func MakeRectVerticesWithUV(pixelWidth, pixelHeight, xMin, xMax, yMin, yMax float32) []float32 {
 
 	return []float32{
 		0.0, pixelHeight, 0.0, xMin, yMin,
@@ -230,8 +230,8 @@ func MakeSquareVerticesWithUV(pixelWidth, pixelHeight, xMin, xMax, yMin, yMax fl
 	}
 }
 
-var ScreenVertices = MakeSquareVertices(WindowWidth, WindowHeight)
+var ScreenVertices = MakeRectVertices(WindowWidth, WindowHeight)
 
-var LevelVertices = MakeSquareVertices(WindowWidth*16, WindowHeight*16)
+var LevelVertices = MakeRectVertices(WindowWidth*16, WindowHeight*16)
 
-var SquareVertices []float32 = MakeSquareVertices(64, 64) // placeholder for cDrawable init
+var SquareVertices []float32 = MakeRectVertices(64, 64) // placeholder for cDrawable init

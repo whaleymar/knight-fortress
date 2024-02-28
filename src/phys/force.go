@@ -20,7 +20,7 @@ type ImpulseForce struct {
 	Magnitude float32
 }
 
-func (force *ContinuousForce) Apply(curVelocity mgl32.Vec3) mgl32.Vec3 {
+func (force *ContinuousForce) Apply(curAcceleration mgl32.Vec3) mgl32.Vec3 {
 	mag := force.Magnitude
 	oldTime := force.Time
 	force.Time -= sys.DeltaTime.Get()
@@ -28,9 +28,9 @@ func (force *ContinuousForce) Apply(curVelocity mgl32.Vec3) mgl32.Vec3 {
 		mag *= oldTime / sys.DeltaTime.Get()
 		force.Time = 0.0
 	}
-	return curVelocity.Add(force.Direction.Mul(mag))
+	return curAcceleration.Add(force.Direction.Mul(mag))
 }
 
-func (force *ImpulseForce) Apply(curVelocity mgl32.Vec3) mgl32.Vec3 {
-	return curVelocity.Add(force.Direction.Mul(force.Magnitude))
+func (force *ImpulseForce) Apply(curAcceleration mgl32.Vec3) mgl32.Vec3 {
+	return curAcceleration.Add(force.Direction.Mul(force.Magnitude))
 }
