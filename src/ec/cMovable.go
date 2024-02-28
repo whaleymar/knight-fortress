@@ -1,6 +1,8 @@
 package ec
 
 import (
+	// "fmt"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
@@ -38,28 +40,13 @@ func (comp *CMovable) update(entity *Entity) {
 		comp.setFollowVelocity(entity)
 	}
 	comp.updateKinematics(entity)
-	var drawComponent *CDrawable
-	if tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, entity); err != nil {
-		return
-	} else {
-		drawComponent = *tmp
-	}
 
-	// update animation based on velocity
-	// vertical animation takes priority (eventually falling would be a thing)
-	var animType AnimationIndex
-	if comp.velocity[1] > 0 {
-		animType = ANIM_MOVE_VUP
-	} else if comp.velocity[1] < 0 {
-		animType = ANIM_MOVE_VDOWN
-	} else if comp.velocity[0] > 0 {
-		animType = ANIM_MOVE_HRIGHT
-	} else if comp.velocity[0] < 0 {
-		animType = ANIM_MOVE_HLEFT
-	} else {
-		animType = ANIM_IDLE
+	if comp.IsMoving() {
+		collideComponent, err := GetComponent[*CCollides](CMP_COLLIDES, entity)
+		if err == nil {
+			(*collideComponent).IsGrounded = false // re-check next frame
+		}
 	}
-	drawComponent.setAnimation(animType)
 }
 
 func (comp *CMovable) getType() ComponentType {
@@ -86,6 +73,8 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 	}
 
 	entity.SetPosition(comp.GetNextPosition(entity))
+	comp.updateAnimation(entity)
+
 	// if not accelerating, apply friction
 	for i := 0; i < 2; i++ {
 		if accel[i] != zerof {
@@ -99,7 +88,7 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 		}
 	}
 	comp.accel = mgl32.Vec3{}
-
+	// ResetControllerAccel()
 }
 
 func (comp *CMovable) GetNextPosition(entity *Entity) mgl32.Vec3 {
@@ -134,4 +123,30 @@ func (comp *CMovable) setFollowVelocity(entity *Entity) {
 	}
 	entity.SetPosition(newPosition)
 	comp.velocity = newVelocity
+}
+
+func (comp *CMovable) updateAnimation(entity *Entity) {
+	var drawComponent *CDrawable
+	if tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, entity); err != nil {
+		return
+	} else {
+		drawComponent = *tmp
+	}
+
+	// update animation based on velocity
+	// vertical animation takes priority (eventually falling would be a thing)
+	var animType AnimationIndex
+	if comp.velocity[1] > 0 {
+		animType = ANIM_MOVE_VUP
+	} else if comp.velocity[1] < 0 {
+		animType = ANIM_MOVE_VDOWN
+	} else if comp.velocity[0] > 0 {
+		animType = ANIM_MOVE_HRIGHT
+	} else if comp.velocity[0] < 0 {
+		animType = ANIM_MOVE_HLEFT
+	} else {
+		animType = ANIM_IDLE
+	}
+	drawComponent.setAnimation(animType)
+
 }

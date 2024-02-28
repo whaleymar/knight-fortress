@@ -70,9 +70,9 @@ func main() {
 
 	platform := ec.MakePlatformBasic()
 	entityManager.Add(&platform)
-	platform2 := ec.MakePlatformBasic()
-	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
-	entityManager.Add(&platform2)
+	// platform2 := ec.MakePlatformBasic()
+	// platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
+	// entityManager.Add(&platform2)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -120,6 +120,7 @@ func main() {
 				otherMoveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, otherEntity)
 				if err != nil {
 					// collision between moving and static object
+					// fmt.Printf("Colliding %s and %s\n", movableEntity.String(), otherEntity.String())
 					ec.TryCollideStaticDynamic(otherEntity, movableEntity)
 				} else {
 					// if both are moving, need to make sure I haven't already simulated collision -> uid reflects order within entity manager
@@ -152,8 +153,6 @@ func main() {
 		for _, entity := range drawableEntities {
 			if entity.String() == "Player" {
 				// fmt.Println(entity.GetPosition())
-				cmpCollision := *ec.GetComponentUnsafe[*ec.CCollides](ec.CMP_COLLIDES, entity)
-				fmt.Println(cmpCollision.IsGrounded)
 			}
 			screenCoords := ec.GetScreenCoordinates(entity.GetBottomLeftPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
@@ -167,6 +166,7 @@ func main() {
 			gfx.UpdateShaderVars(program)
 			gl.DrawArrays(gl.TRIANGLES, 0, nVertices)
 		}
+		// fmt.Println("")
 
 		// Maintenance
 		window.SwapBuffers()

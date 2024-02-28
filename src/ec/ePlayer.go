@@ -126,6 +126,12 @@ func GetControllerAccel() mgl32.Vec3 {
 	return controllerAcceleration
 }
 
+func ResetControllerAccel() {
+	_CONTROLLER_LOCK.Lock()
+	defer _CONTROLLER_LOCK.Unlock()
+	controllerAcceleration = mgl32.Vec3{}
+}
+
 func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Repeat {
 		return
@@ -139,11 +145,17 @@ func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, act
 		multiplier = 1.0
 	}
 
+	moveCmp, err := GetComponent[*CMovable](CMP_MOVABLE, GetPlayerPtr())
+	if err != nil {
+		return
+	}
+
 	_CONTROLLER_LOCK.Lock()
 	defer _CONTROLLER_LOCK.Unlock()
 	switch key {
 	case glfw.KeyW:
 		controllerAcceleration[1] += phys.ACCEL_PLAYER_DEFAULT * multiplier
+		(*moveCmp).accel[1] += phys.ACCEL_PLAYER_DEFAULT * 6
 	case glfw.KeyS:
 		controllerAcceleration[1] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
 	case glfw.KeyA:

@@ -6,13 +6,13 @@ import "github.com/go-gl/mathgl/mgl32"
 // so an entity with a speed of 1 should travel 32 texels per second
 
 const (
-	PHYSICS_PLAYER_SPEEDMAX = float32(2.0)
+	PHYSICS_PLAYER_SPEEDMAX = float32(4.0)
 	PHYSICS_FRICTION_COEF   = float32(0.5)
 	PHYSICS_MIN_SPEED       = float32(0.0001)
 	ACCEL_PLAYER_DEFAULT    = float32(0.5)
 )
 
-var PHYSICS_GRAVITY Force = &ImpulseForce{mgl32.Vec3{0, -1, 0}, 0.1}
+var PHYSICS_GRAVITY Force = &ImpulseForce{mgl32.Vec3{0, -1, 0}, 0.2}
 var ORIGIN mgl32.Vec3 = mgl32.Vec3{0.0, 0.0, 0.0}
 
 type Point struct {
