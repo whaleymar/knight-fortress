@@ -1,13 +1,17 @@
 package ec
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/phys"
+	"github.com/whaleymar/knight-fortress/src/sys"
 )
+
+var _ = fmt.Println
 
 const (
 	SPRITE_LOC_PLAYER_X       = 0
@@ -70,9 +74,11 @@ func makePlayerEntity() Entity {
 
 	entity.components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded size -- would be nice to have a method that converts sprites to AABB
-		phys.RIGIDBODY_DYNAMIC,
+		phys.RigidBody{phys.RIGIDBODY_DYNAMIC, phys.RBSTATE_GROUNDED},
 		true,
 	})
+
+	CreatePlayerControls()
 
 	return entity
 }
@@ -132,37 +138,73 @@ func ResetControllerAccel() {
 	controllerAcceleration = mgl32.Vec3{}
 }
 
-func PlayerControlsCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action == glfw.Repeat {
-		return
-	}
+func CreatePlayerControls() {
 
-	var multiplier float32
-	if action == glfw.Release {
-		// sets accel in that direction to zero
-		multiplier = -1.0
-	} else {
-		multiplier = 1.0
-	}
+	// move left
+	sys.GetControlsManager().Add(sys.ButtonStateMachine{
+		glfw.KeyA,
+		sys.BUTTONSTATE_OFF,
+		func(state sys.ButtonState) {
+			if state == sys.BUTTONSTATE_OFF {
+				return
+			}
+			controllerAcceleration[0] -= phys.ACCEL_PLAYER_DEFAULT
+		},
+		0.0,
+		0.0,
+		false,
+	})
 
-	moveCmp, err := GetComponent[*CMovable](CMP_MOVABLE, GetPlayerPtr())
-	if err != nil {
-		return
-	}
+	// move right
+	sys.GetControlsManager().Add(sys.ButtonStateMachine{
+		glfw.KeyD,
+		sys.BUTTONSTATE_OFF,
+		func(state sys.ButtonState) {
+			if state == sys.BUTTONSTATE_OFF {
+				return
+			}
+			controllerAcceleration[0] += phys.ACCEL_PLAYER_DEFAULT
+		},
+		0.0,
+		0.0,
+		false,
+	})
 
-	_CONTROLLER_LOCK.Lock()
-	defer _CONTROLLER_LOCK.Unlock()
-	switch key {
-	case glfw.KeyW:
-		controllerAcceleration[1] += phys.ACCEL_PLAYER_DEFAULT * multiplier
-		(*moveCmp).accel[1] += phys.ACCEL_PLAYER_DEFAULT * 6
-	case glfw.KeyS:
-		controllerAcceleration[1] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
-	case glfw.KeyA:
-		controllerAcceleration[0] += -phys.ACCEL_PLAYER_DEFAULT * multiplier
-	case glfw.KeyD:
-		controllerAcceleration[0] += phys.ACCEL_PLAYER_DEFAULT * multiplier
-	case glfw.Key0:
-		GetPlayerPtr().SetPosition(phys.ORIGIN)
-	}
+	// jump
+	sys.GetControlsManager().Add(sys.ButtonStateMachine{
+		glfw.KeyW,
+		sys.BUTTONSTATE_OFF,
+		func(state sys.ButtonState) {
+			cmpCollides := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, GetPlayerPtr())
+			if (cmpCollides.IsGrounded && state == sys.BUTTONSTATE_ON) ||
+				(!cmpCollides.IsGrounded && cmpCollides.RigidBody.State == phys.RBSTATE_JUMPING && state == sys.BUTTONSTATE_HELD) {
+				controllerAcceleration[1] += 3 * phys.ACCEL_PLAYER_DEFAULT
+				cmpCollides.RigidBody.State = phys.RBSTATE_JUMPING
+			} else if cmpCollides.IsGrounded {
+				cmpCollides.RigidBody.State = phys.RBSTATE_GROUNDED
+			} else if cmpCollides.RigidBody.State == phys.RBSTATE_JUMPING && state == sys.BUTTONSTATE_OFF {
+				cmpCollides.RigidBody.State = phys.RBSTATE_FALLING
+			}
+		},
+		0.25, // max time
+		0.0,
+		false,
+	})
+
+	// reset position
+	sys.GetControlsManager().Add(sys.ButtonStateMachine{
+		glfw.Key0,
+		sys.BUTTONSTATE_OFF,
+		func(state sys.ButtonState) {
+			GetPlayerPtr().SetPosition(phys.ORIGIN)
+			moveCmp, err := GetComponent[*CMovable](CMP_MOVABLE, GetPlayerPtr())
+			if err != nil {
+				return
+			}
+			(*moveCmp).velocity = mgl32.Vec3{}
+		},
+		0.0,
+		0.0,
+		false,
+	})
 }

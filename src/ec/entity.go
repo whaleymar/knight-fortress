@@ -67,11 +67,11 @@ func (entity *Entity) Init() error {
 	if err == nil {
 		_, err := GetComponent[*CMovable](CMP_MOVABLE, entity)
 		if err == nil {
-			if (*cmpCollides).RigidBody == phys.RIGIDBODY_NONE || (*cmpCollides).RigidBody == phys.RIGIDBODY_STATIC {
+			if (*cmpCollides).RigidBody.RBtype == phys.RIGIDBODY_NONE || (*cmpCollides).RigidBody.RBtype == phys.RIGIDBODY_STATIC {
 				return fmt.Errorf("Entity with RigidBody enum %d cannot have movable component", (*cmpCollides).RigidBody)
 			}
 		} else {
-			if (*cmpCollides).RigidBody == phys.RIGIDBODY_DYNAMIC || (*cmpCollides).RigidBody == phys.RIGIDBODY_KINEMATIC {
+			if (*cmpCollides).RigidBody.RBtype == phys.RIGIDBODY_DYNAMIC || (*cmpCollides).RigidBody.RBtype == phys.RIGIDBODY_KINEMATIC {
 				return fmt.Errorf("Entity with RigidBody enum %d must have movable component", (*cmpCollides).RigidBody)
 			}
 		}

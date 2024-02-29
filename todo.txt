@@ -7,10 +7,8 @@ short term:
     - figure out how forces/acceleration should work
     - circle colliders + collision between different shapes
     - toggle translucent colliders
-- gravity
-- jumping
+- level entity manager
 - unloading entities (mainly need to free opengl vars)
-- platforms
 - resizable screen
 - animation changes should be queued until the current animation completes its frame time
 

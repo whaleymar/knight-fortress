@@ -10,15 +10,6 @@ import (
 	"github.com/whaleymar/knight-fortress/src/math"
 )
 
-type RigidBodyType int
-
-const (
-	RIGIDBODY_NONE RigidBodyType = iota
-	RIGIDBODY_STATIC
-	RIGIDBODY_DYNAMIC
-	RIGIDBODY_KINEMATIC
-)
-
 type Collider interface {
 	SetPosition(Point)
 	GetPosition() Point

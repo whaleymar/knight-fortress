@@ -70,9 +70,9 @@ func main() {
 
 	platform := ec.MakePlatformBasic()
 	entityManager.Add(&platform)
-	// platform2 := ec.MakePlatformBasic()
-	// platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
-	// entityManager.Add(&platform2)
+	platform2 := ec.MakePlatformBasic()
+	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
+	entityManager.Add(&platform2)
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -100,7 +100,6 @@ func main() {
 		gl.Uniform1f(millis, float32(glfw.GetTime()))
 
 		// Physics
-
 		// This should be more efficient than checking collision for all colliders
 		// since first we check if 1. a collider is movable and 2. it is moving
 		// TODO this should go in its own function and run in parallel
@@ -132,6 +131,10 @@ func main() {
 				}
 			}
 		}
+
+		// have to run this between physics and component updates because of how gravity works
+		// otherwise controls aren't very responsive
+		sys.GetControlsManager().Update()
 
 		// Everything else
 		for _, entity := range entityManager.GetEntitiesWithComponent(ec.CMP_ANY) {
@@ -168,6 +171,9 @@ func main() {
 		}
 		// fmt.Println("")
 
+		// Reset Frame Vars
+		ec.ResetControllerAccel()
+
 		// Maintenance
 		window.SwapBuffers()
 		glfw.PollEvents()
@@ -193,7 +199,8 @@ func initGlfw() *glfw.Window {
 }
 
 func InitControls(window *glfw.Window) {
-	window.SetKeyCallback(ec.PlayerControlsCallback)
+	// window.SetKeyCallback(ec.PlayerControlsCallback)
+	window.SetKeyCallback(sys.ControlsCallback)
 }
 
 func updateFPS(fpsCh <-chan float32) {

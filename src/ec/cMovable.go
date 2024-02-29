@@ -1,13 +1,15 @@
 package ec
 
 import (
-	// "fmt"
+	"fmt"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
 	"github.com/whaleymar/knight-fortress/src/sys"
 )
+
+var _ = fmt.Println
 
 // movement based animations here: fall, jump, crouch
 type AnimationIndex int
@@ -43,7 +45,7 @@ func (comp *CMovable) update(entity *Entity) {
 
 	if comp.IsMoving() {
 		collideComponent, err := GetComponent[*CCollides](CMP_COLLIDES, entity)
-		if err == nil {
+		if err == nil && (*collideComponent).RigidBody.RBtype == phys.RIGIDBODY_DYNAMIC {
 			(*collideComponent).IsGrounded = false // re-check next frame
 		}
 	}
@@ -75,12 +77,12 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 	entity.SetPosition(comp.GetNextPosition(entity))
 	comp.updateAnimation(entity)
 
-	// if not accelerating, apply friction
+	// if not accelerating, apply friction on x velocity
 	for i := 0; i < 2; i++ {
 		if accel[i] != zerof {
 			comp.velocity[i] += accel[i]
 			comp.velocity[i] = math.Clamp(comp.velocity[i], velocityMin, velocityMax)
-		} else if comp.velocity[i] != zerof && comp.isFrictionActive {
+		} else if i == 0 && comp.velocity[i] != zerof && comp.isFrictionActive {
 			comp.velocity[i] *= (1 - phys.PHYSICS_FRICTION_COEF)
 			if mgl32.Abs(comp.velocity[i]) < phys.PHYSICS_MIN_SPEED {
 				comp.velocity[i] = zerof
@@ -88,7 +90,6 @@ func (comp *CMovable) updateKinematics(entity *Entity) {
 		}
 	}
 	comp.accel = mgl32.Vec3{}
-	// ResetControllerAccel()
 }
 
 func (comp *CMovable) GetNextPosition(entity *Entity) mgl32.Vec3 {
@@ -148,5 +149,4 @@ func (comp *CMovable) updateAnimation(entity *Entity) {
 		animType = ANIM_IDLE
 	}
 	drawComponent.setAnimation(animType)
-
 }
