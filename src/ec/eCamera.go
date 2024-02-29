@@ -31,7 +31,7 @@ func makeCameraEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.Add(&CMovable{
+	entity.Components.Add(&CMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
 		mgl32.InfPos,

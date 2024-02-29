@@ -1,9 +1,10 @@
 package ec
 
 import (
+	"sync"
+
 	"github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/sys"
-	"sync"
 )
 
 // define depth order for sorting
@@ -71,7 +72,7 @@ func (comp *CDrawable) update(entity *Entity) {
 		yMin = pixelOffset / sheetSizeY
 		yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / sheetSizeY
 
-		comp.vertices = gfx.MakeRectVerticesWithUV(float32(comp.sprite.frameSize[0]*gfx.PixelsPerTexel)*comp.scale[0], float32(comp.sprite.frameSize[1]*gfx.PixelsPerTexel)*comp.scale[1], xMin, xMax, yMin, yMax)
+		comp.vertices = gfx.MakeRectVerticesWithUV(comp.getPixelSize(false), comp.getPixelSize(true), xMin, xMax, yMin, yMax)
 	}
 	comp.isUvUpdateNeeded = false
 }
@@ -116,6 +117,14 @@ func (comp *CDrawable) GetVbo() gfx.VBO {
 
 func (comp *CDrawable) GetVertices() []float32 {
 	return comp.vertices
+}
+
+func (comp *CDrawable) getPixelSize(vertical bool) float32 {
+	ix := 0
+	if vertical {
+		ix = 1
+	}
+	return float32(comp.sprite.frameSize[ix]*gfx.PixelsPerTexel) * comp.scale[ix]
 }
 
 func (animManager *AnimationManager) getAnimation() Animation {

@@ -85,8 +85,6 @@ func (texMgr *TextureManager) register(texArray TextureArray, textureIx TextureS
 
 	// repeat at end of texture
 	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
-	// gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	// gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 

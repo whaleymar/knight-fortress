@@ -37,7 +37,7 @@ func (eMgr *EntityManager) Add(entity *Entity) (uint64, error) {
 	}
 
 	uid := eMgr.nextId
-	entity.uid = uid
+	entity.Uid = uid
 	eMgr.nextId++
 	eMgr.entities = append(eMgr.entities, entity)
 
@@ -49,8 +49,8 @@ func (eMgr *EntityManager) Remove(uid uint64) {
 	defer eMgr.rwlock.Unlock()
 
 	for i, entity := range eMgr.entities {
-		if uid == entity.uid {
-			entity.components.Clear()
+		if uid == entity.Uid {
+			entity.Components.Clear()
 			eMgr.entities = append(eMgr.entities[:i], eMgr.entities[i+1:]...)
 			return
 		}
@@ -62,7 +62,7 @@ func (eMgr *EntityManager) Get(uid uint64) (*Entity, error) {
 	defer eMgr.rwlock.RUnlock()
 
 	for _, entity := range eMgr.entities {
-		if uid == entity.uid {
+		if uid == entity.Uid {
 			return entity, nil
 		}
 	}

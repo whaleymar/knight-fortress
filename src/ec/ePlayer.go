@@ -19,10 +19,11 @@ const (
 	SPRITE_LOC_PLAYER_Z       = 0
 	SPRITE_HEIGHT_PLAYER      = 16
 	SPRITE_WIDTH_PLAYER       = 16
-	ANIM_OFFSET_PLAYER_HRIGHT = 1
-	ANIM_OFFSET_PLAYER_HLEFT  = 3
+	ANIM_ROW_PLAYER           = 0
+	ANIM_OFFSET_PLAYER_HRIGHT = 8
+	ANIM_OFFSET_PLAYER_HLEFT  = 10
 	ANIM_OFFSET_PLAYER_VDOWN  = 0
-	ANIM_OFFSET_PLAYER_VUP    = 2
+	ANIM_OFFSET_PLAYER_VUP    = 4
 	ANIM_FRAMES_PLAYER_H      = 2
 	ANIM_FRAMES_PLAYER_V      = 4
 	ANIM_FPS_DEFAULT          = 4.0
@@ -52,7 +53,7 @@ func makePlayerEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.Add(&CDrawable{
+	entity.Components.Add(&CDrawable{
 		gfx.SquareVertices,
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
@@ -63,7 +64,7 @@ func makePlayerEntity() Entity {
 		true, // isUvUpdateNeeded
 	})
 
-	entity.components.Add(&CMovable{
+	entity.Components.Add(&CMovable{
 		mgl32.Vec3{},
 		mgl32.Vec3{},
 		phys.PHYSICS_PLAYER_SPEEDMAX,
@@ -72,7 +73,7 @@ func makePlayerEntity() Entity {
 		true,
 	})
 
-	entity.components.Add(&CCollides{
+	entity.Components.Add(&CCollides{
 		&phys.AABB{phys.Point{}, phys.Point{0.25, 0.25}}, // TODO hard coded size -- would be nice to have a method that converts sprites to AABB
 		phys.RigidBody{phys.RIGIDBODY_DYNAMIC, phys.RBSTATE_GROUNDED},
 		true,
@@ -93,11 +94,11 @@ func makePlayerSprite(animMgr AnimationManager) Sprite {
 }
 
 func makePlayerAnimationManager() AnimationManager {
-	idleAnim := makeAnimation(1, ANIM_OFFSET_PLAYER_VDOWN, 1)
-	hAnimLeft := makeAnimation(0, ANIM_OFFSET_PLAYER_HLEFT, ANIM_FRAMES_PLAYER_H)
-	hAnimRight := makeAnimation(0, ANIM_OFFSET_PLAYER_HRIGHT, ANIM_FRAMES_PLAYER_H)
-	vAnimUp := makeAnimation(0, ANIM_OFFSET_PLAYER_VUP, ANIM_FRAMES_PLAYER_V)
-	vAnimDown := makeAnimation(0, ANIM_OFFSET_PLAYER_VDOWN, ANIM_FRAMES_PLAYER_V)
+	idleAnim := makeAnimation(ANIM_OFFSET_PLAYER_VDOWN+1, ANIM_ROW_PLAYER, 1)
+	hAnimLeft := makeAnimation(ANIM_OFFSET_PLAYER_HLEFT, ANIM_ROW_PLAYER, ANIM_FRAMES_PLAYER_H)
+	hAnimRight := makeAnimation(ANIM_OFFSET_PLAYER_HRIGHT, ANIM_ROW_PLAYER, ANIM_FRAMES_PLAYER_H)
+	vAnimUp := makeAnimation(ANIM_OFFSET_PLAYER_VUP, ANIM_ROW_PLAYER, ANIM_FRAMES_PLAYER_V)
+	vAnimDown := makeAnimation(ANIM_OFFSET_PLAYER_VDOWN, ANIM_ROW_PLAYER, ANIM_FRAMES_PLAYER_V)
 
 	mgr := AnimationManager{
 		[]Animation{

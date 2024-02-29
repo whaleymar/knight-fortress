@@ -10,17 +10,17 @@ import (
 )
 
 type Entity struct {
-	uid        uint64
-	name       string
-	components ComponentManager
-	position   mgl32.Vec3
-	rwlock     *sync.RWMutex
+	Uid        uint64
+	Name       string
+	Components ComponentManager
+	Position   mgl32.Vec3
+	RWlock     *sync.RWMutex
 }
 
 func (entity *Entity) GetPosition() mgl32.Vec3 {
-	entity.rwlock.RLock()
-	defer entity.rwlock.RUnlock()
-	return entity.position
+	entity.RWlock.RLock()
+	defer entity.RWlock.RUnlock()
+	return entity.Position
 }
 
 func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
@@ -39,25 +39,25 @@ func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
 }
 
 func (entity *Entity) SetPosition(position mgl32.Vec3) {
-	entity.rwlock.Lock()
-	defer entity.rwlock.Unlock()
-	entity.position = position
+	entity.RWlock.Lock()
+	defer entity.RWlock.Unlock()
+	entity.Position = position
 }
 
 func (entity *Entity) GetComponentManager() ComponentManager {
-	return entity.components
+	return entity.Components
 }
 
 func (entity *Entity) String() string {
-	return string(fmt.Sprint(entity.name))
+	return string(fmt.Sprint(entity.Name))
 }
 
 func (entity *Entity) Equals(other *Entity) bool {
-	return entity.uid == other.uid
+	return entity.Uid == other.Uid
 }
 
 func (entity *Entity) GetId() uint64 {
-	return entity.uid
+	return entity.Uid
 }
 
 func (entity *Entity) Init() error {

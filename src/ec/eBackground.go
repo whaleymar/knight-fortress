@@ -46,7 +46,7 @@ func MakeLevelEntity() Entity {
 		&sync.RWMutex{},
 	}
 
-	entity.components.Add(&CDrawable{
+	entity.Components.Add(&CDrawable{
 		// levelVertices,
 		gfx.ScreenVertices,
 		gfx.MakeVao(),

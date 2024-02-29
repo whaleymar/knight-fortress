@@ -37,13 +37,13 @@ func (lvl *level) addChild(uid uint64) {
 func (lvl *level) Load() {
 	entityManager := ec.GetEntityManager()
 
-	platform := ec.MakePlatformBasic()
+	platform := ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
 	uid, err := entityManager.Add(&platform)
 	if err == nil {
 		lvl.addChild(uid)
 	}
 
-	platform2 := ec.MakePlatformBasic()
+	platform2 := ec.MakeBasicBlock(ec.SHEETOFFSET_X_DIRT, ec.SHEETOFFSET_Y_DIRT)
 	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
 	uid, err = entityManager.Add(&platform2)
 	if err == nil {
