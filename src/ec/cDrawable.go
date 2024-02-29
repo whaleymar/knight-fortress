@@ -80,6 +80,11 @@ func (comp *CDrawable) getType() ComponentType {
 	return CMP_DRAWABLE
 }
 
+func (comp *CDrawable) onDelete() {
+	comp.vao.Free()
+	comp.vbo.Free()
+}
+
 func (comp *CDrawable) getAnimation() Animation {
 	comp.rwlock.RLock()
 	defer comp.rwlock.RUnlock()

@@ -16,6 +16,7 @@ import (
 
 	"github.com/whaleymar/knight-fortress/src/ec"
 	"github.com/whaleymar/knight-fortress/src/gfx"
+	"github.com/whaleymar/knight-fortress/src/level"
 	"github.com/whaleymar/knight-fortress/src/sys"
 )
 
@@ -62,17 +63,18 @@ func main() {
 	// init entities
 	entityManager := ec.GetEntityManager()
 
-	entityManager.Add(ec.GetPlayerPtr())
-	entityManager.Add(ec.GetCameraPtr())
+	_, err = entityManager.Add(ec.GetPlayerPtr())
+	if err != nil {
+		panic("Couldn't load player")
+	}
+	_, err = entityManager.Add(ec.GetCameraPtr())
+	if err != nil {
+		panic("Couldn't load camera")
+	}
 
-	// level := ec.MakeLevelEntity()
-	// entityManager.Add(&level)
-
-	platform := ec.MakePlatformBasic()
-	entityManager.Add(&platform)
-	platform2 := ec.MakePlatformBasic()
-	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
-	entityManager.Add(&platform2)
+	level.GetCurrentLevel().Load()
+	ec.CreatePlayerControls()
+	level.CreateLevelControls()
 
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
@@ -91,7 +93,6 @@ func main() {
 	go updateFPS(fpsCh)
 
 	for !window.ShouldClose() {
-		// fmt.Println(entityManager.Len())
 		sys.DeltaTime.Update()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -154,9 +155,6 @@ func main() {
 			return cmp.Compare(e1.GetPosition().Z(), e2.GetPosition().Z())
 		})
 		for _, entity := range drawableEntities {
-			if entity.String() == "Player" {
-				// fmt.Println(entity.GetPosition())
-			}
 			screenCoords := ec.GetScreenCoordinates(entity.GetBottomLeftPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
 			drawComponent := *ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, entity)
@@ -199,7 +197,6 @@ func initGlfw() *glfw.Window {
 }
 
 func InitControls(window *glfw.Window) {
-	// window.SetKeyCallback(ec.PlayerControlsCallback)
 	window.SetKeyCallback(sys.ControlsCallback)
 }
 

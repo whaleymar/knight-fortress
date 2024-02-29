@@ -2,7 +2,6 @@ package ec
 
 import (
 	"fmt"
-	"log"
 	"sync"
 )
 
@@ -27,20 +26,22 @@ func GetEntityManager() *EntityManager {
 	return entityManagerPtr
 }
 
-func (eMgr *EntityManager) Add(entity *Entity) {
+func (eMgr *EntityManager) Add(entity *Entity) (uint64, error) {
 	// enforce uniqueness?
 	eMgr.rwlock.Lock()
 	defer eMgr.rwlock.Unlock()
 
 	err := entity.Init()
 	if err != nil {
-		log.Printf("Entity %s has error: %s\n", entity.String(), err)
-		return
+		return 0, fmt.Errorf("Entity %s has error: %s\n", entity.String(), err)
 	}
 
-	entity.uid = eMgr.nextId
+	uid := eMgr.nextId
+	entity.uid = uid
 	eMgr.nextId++
 	eMgr.entities = append(eMgr.entities, entity)
+
+	return uid, nil
 }
 
 func (eMgr *EntityManager) Remove(uid uint64) {
@@ -49,6 +50,7 @@ func (eMgr *EntityManager) Remove(uid uint64) {
 
 	for i, entity := range eMgr.entities {
 		if uid == entity.uid {
+			entity.components.Clear()
 			eMgr.entities = append(eMgr.entities[:i], eMgr.entities[i+1:]...)
 			return
 		}

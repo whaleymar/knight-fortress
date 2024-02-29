@@ -137,6 +137,10 @@ func (vao VAO) Bind() {
 	gl.BindVertexArray(vao.handle)
 }
 
+func (vao VAO) Free() {
+	gl.DeleteVertexArrays(1, &vao.handle)
+}
+
 func MakeVbo() VBO {
 	var vbo VBO
 	gl.GenBuffers(1, &vbo.handle)
@@ -149,6 +153,10 @@ func (vbo VBO) Bind() {
 
 func (vbo VBO) Buffer(data []float32) {
 	gl.BufferData(gl.ARRAY_BUFFER, len(data)*FLOAT_SIZE, gl.Ptr(data), gl.STATIC_DRAW)
+}
+
+func (vbo VBO) Free() {
+	gl.DeleteBuffers(1, &vbo.handle)
 }
 
 func UpdateShaderVars(program uint32) ShaderConfig {

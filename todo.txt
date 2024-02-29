@@ -1,4 +1,5 @@
 short term:
+- load entity/components from YAML
 - physics/collision component(s?)
     - more accurate bounding boxes -> collision mesh
     - collision between two rigid bodies
@@ -7,10 +8,9 @@ short term:
     - figure out how forces/acceleration should work
     - circle colliders + collision between different shapes
     - toggle translucent colliders
-- level entity manager
-- unloading entities (mainly need to free opengl vars)
 - resizable screen
 - animation changes should be queued until the current animation completes its frame time
+- buffered inputs
 
 when I need it:
 - opengl instancing

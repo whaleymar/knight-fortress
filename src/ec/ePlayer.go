@@ -78,7 +78,7 @@ func makePlayerEntity() Entity {
 		true,
 	})
 
-	CreatePlayerControls()
+	// CreatePlayerControls()
 
 	return entity
 }
@@ -191,20 +191,20 @@ func CreatePlayerControls() {
 		false,
 	})
 
-	// reset position
-	sys.GetControlsManager().Add(sys.ButtonStateMachine{
-		glfw.Key0,
-		sys.BUTTONSTATE_OFF,
-		func(state sys.ButtonState) {
-			GetPlayerPtr().SetPosition(phys.ORIGIN)
-			moveCmp, err := GetComponent[*CMovable](CMP_MOVABLE, GetPlayerPtr())
-			if err != nil {
-				return
-			}
-			(*moveCmp).velocity = mgl32.Vec3{}
-		},
-		0.0,
-		0.0,
-		false,
-	})
+	// // reset position
+	// sys.GetControlsManager().Add(sys.ButtonStateMachine{
+	// 	glfw.Key0,
+	// 	sys.BUTTONSTATE_OFF,
+	// 	func(state sys.ButtonState) {
+	// 		GetPlayerPtr().SetPosition(phys.ORIGIN)
+	// 		moveCmp, err := GetComponent[*CMovable](CMP_MOVABLE, GetPlayerPtr())
+	// 		if err != nil {
+	// 			return
+	// 		}
+	// 		(*moveCmp).velocity = mgl32.Vec3{}
+	// 	},
+	// 	0.0,
+	// 	0.0,
+	// 	false,
+	// })
 }

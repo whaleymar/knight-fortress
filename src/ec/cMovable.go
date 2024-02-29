@@ -55,12 +55,18 @@ func (comp *CMovable) getType() ComponentType {
 	return CMP_MOVABLE
 }
 
+func (comp *CMovable) onDelete() {}
+
 func (comp *CMovable) IsMoving() bool {
 	return comp.velocity[0] != 0.0 || comp.velocity[1] != 0.0
 }
 
 func (comp *CMovable) IsAccelerating() bool {
 	return comp.accel[0] != 0.0 || comp.accel[1] != 0.0
+}
+
+func (comp *CMovable) SetVelocity(velocity mgl32.Vec3) {
+	comp.velocity = velocity
 }
 
 func (comp *CMovable) updateKinematics(entity *Entity) {

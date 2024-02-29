@@ -16,4 +16,5 @@ type ComponentTypeList interface {
 type Component interface {
 	update(*Entity)
 	getType() ComponentType
+	onDelete()
 }

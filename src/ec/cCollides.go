@@ -12,7 +12,7 @@ var _ = fmt.Println
 type CCollides struct {
 	collider   phys.Collider
 	RigidBody  phys.RigidBody
-	IsGrounded bool
+	IsGrounded bool // this can only be turned on by a collision and is turned off for moving entities at the end of each frame
 	// bounciness, weight, smoothness
 }
 
@@ -21,12 +21,10 @@ func (comp *CCollides) update(entity *Entity) {
 		comp.collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
 	}
 	if comp.RigidBody.RBtype == phys.RIGIDBODY_DYNAMIC {
-		if !comp.IsGrounded {
-			cmpMovable := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, entity)
-			cmpMovable.accel = phys.PHYSICS_GRAVITY.Apply(cmpMovable.accel)
-			if comp.RigidBody.State == phys.RBSTATE_GROUNDED {
-				comp.RigidBody.State = phys.RBSTATE_FALLING
-			}
+		cmpMovable := *GetComponentUnsafe[*CMovable](CMP_MOVABLE, entity)
+		cmpMovable.accel = phys.PHYSICS_GRAVITY.Apply(cmpMovable.accel)
+		if comp.RigidBody.State == phys.RBSTATE_GROUNDED {
+			comp.RigidBody.State = phys.RBSTATE_FALLING
 		}
 	}
 }
@@ -34,6 +32,8 @@ func (comp *CCollides) update(entity *Entity) {
 func (comp *CCollides) getType() ComponentType {
 	return CMP_COLLIDES
 }
+
+func (comp *CCollides) onDelete() {}
 
 func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 	collidesStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)

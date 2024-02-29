@@ -8,6 +8,7 @@ type ComponentManager interface {
 	Get(ComponentType) (*Component, error)
 	Remove(ComponentType) error
 	Update(*Entity)
+	Clear()
 }
 
 type ComponentList struct {
@@ -52,6 +53,7 @@ func (components *ComponentList) Get(enum ComponentType) (*Component, error) {
 func (components *ComponentList) Remove(enum ComponentType) error {
 	for i, comp := range components.components {
 		if comp.getType() == enum {
+			comp.onDelete()
 			components.components = append(components.components[:i], components.components[i+1:]...)
 			return nil
 		}
@@ -63,4 +65,11 @@ func (components *ComponentList) Update(entity *Entity) {
 	for _, comp := range components.components {
 		comp.update(entity)
 	}
+}
+
+func (components *ComponentList) Clear() {
+	for _, comp := range components.components {
+		comp.onDelete()
+	}
+	components.components = nil
 }
