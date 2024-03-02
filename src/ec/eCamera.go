@@ -23,13 +23,7 @@ func GetCameraPtr() *Entity {
 }
 
 func makeCameraEntity() Entity {
-	entity := Entity{
-		0,
-		"Camera",
-		&ComponentList{},
-		mgl32.Vec3{},
-		&sync.RWMutex{},
-	}
+	entity := MakeEntity("Camera")
 
 	entity.Components.Add(&CMovable{
 		mgl32.Vec3{},

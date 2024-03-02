@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/phys"
 	"github.com/whaleymar/knight-fortress/src/sys"
@@ -45,13 +46,8 @@ func GetPlayerPtr() *Entity {
 }
 
 func makePlayerEntity() Entity {
-	entity := Entity{
-		0,
-		"Player",
-		&ComponentList{},
-		mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER},
-		&sync.RWMutex{},
-	}
+	entity := MakeEntity("Player")
+	entity.SetPosition(mgl32.Vec3{0.0, 0.0, DEPTH_PLAYER})
 
 	entity.Components.Add(&CDrawable{
 		gfx.SquareVertices,
@@ -63,6 +59,12 @@ func makePlayerEntity() Entity {
 		&sync.RWMutex{},
 		true, // isUvUpdateNeeded
 	})
+	// tmpInterface, err := LoadComponentDrawable("playerdraw.yml")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// drawComponent := tmpInterface.(CDrawable)
+	// entity.Components.Add(&drawComponent)
 
 	entity.Components.Add(&CMovable{
 		mgl32.Vec3{},
@@ -78,8 +80,13 @@ func makePlayerEntity() Entity {
 		phys.RigidBody{phys.RIGIDBODY_DYNAMIC, phys.RBSTATE_GROUNDED},
 		true,
 	})
+	// collidesComponent, err := LoadComponentCollider("playercollide.yml")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// entity.Components.Add(&collidesComponent)
 
-	// CreatePlayerControls()
+	entity.Data = append(entity.Data, &CSerialize{"Player"})
 
 	return entity
 }

@@ -76,6 +76,14 @@ func main() {
 	ec.CreatePlayerControls()
 	level.CreateLevelControls()
 
+	// sys.SaveStruct("playermove.yml", (*ec.GetComponentUnsafe[*ec.CMovable](ec.CMP_MOVABLE, ec.GetPlayerPtr())).GetSaveData())
+	// sys.SaveStruct("playercollide.yml", (*ec.GetComponentUnsafe[*ec.CCollides](ec.CMP_COLLIDES, ec.GetPlayerPtr())).GetSaveData())
+	// err = sys.SaveStruct("playerdraw.yml", (*ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, ec.GetPlayerPtr())).GetSaveData())
+	// err = ec.GetPlayerPtr().SaveToFile()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
 	var texture uint32
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)

@@ -27,3 +27,10 @@ func Sign[T Signed](val T) T {
 	}
 	return 1
 }
+
+func Abs[T Signed](val T) T {
+	if val < 0 {
+		return val * -1
+	}
+	return val
+}

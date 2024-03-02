@@ -69,6 +69,18 @@ func (eMgr *EntityManager) Get(uid uint64) (*Entity, error) {
 	return nil, fmt.Errorf("Entity with ID %d not found", uid)
 }
 
+func (eMgr *EntityManager) GetEntityWithName(name string) (*Entity, error) {
+	eMgr.rwlock.RLock()
+	defer eMgr.rwlock.RUnlock()
+
+	for _, entity := range eMgr.entities {
+		if name == entity.Name {
+			return entity, nil
+		}
+	}
+	return nil, fmt.Errorf("Entity with name %s not found", name)
+}
+
 func (eMgr *EntityManager) Len() int {
 	return len(eMgr.entities)
 }

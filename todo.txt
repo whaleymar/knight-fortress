@@ -1,16 +1,25 @@
 short term:
 - load entity/components from YAML
+    - load level config dynamically
+        - pointer to entity config + position data?
+    - why is level.Load() running twice on startup?
+
+- collision: GHOST vertices
+
 - physics/collision component(s?)
-    - more accurate bounding boxes -> collision mesh
     - collision between two rigid bodies
-    - trigger collision
-    - entities which are movable + have a collider, but are not affected by collisions (isKinematic in unity)
+    - new collision components (de-abstract the current one)
+        - trigger collision
+            - hurt box
+        - entities which are movable + have a collider, but are not affected by collisions (isKinematic in unity)
     - figure out how forces/acceleration should work
     - circle colliders + collision between different shapes
-    - toggle translucent colliders
+    - toggle translucent colliders (debug mode)
 - resizable screen
-- animation changes should be queued until the current animation completes its frame time
-- buffered inputs
+- frame tracker:
+    - animation changes should be queued until the current animation completes its frame time
+    - buffered inputs
+    - check if isgrounded every 4 frames
 
 when I need it:
 - opengl instancing

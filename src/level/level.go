@@ -1,6 +1,7 @@
 package level
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -37,19 +38,20 @@ func (lvl *level) addChild(uid uint64) {
 func (lvl *level) Load() {
 	entityManager := ec.GetEntityManager()
 
-	platform := ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
-	uid, err := entityManager.Add(&platform)
-	if err == nil {
-		lvl.addChild(uid)
+	nSquares := 256
+	squares := make([]ec.Entity, 256)
+	for i := 0; i < nSquares; i++ {
+		squares[i] = ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
+		squares[i].SetPosition(mgl32.Vec3{(float32(i) - 128) * 0.25, -0.5, ec.DEPTH_GROUND})
+
+		uid, err := entityManager.Add(&squares[i])
+		if err == nil {
+			lvl.addChild(uid)
+		}
 	}
 
-	platform2 := ec.MakeBasicBlock(ec.SHEETOFFSET_X_DIRT, ec.SHEETOFFSET_Y_DIRT)
-	platform2.SetPosition(mgl32.Vec3{4.0, 0.0, ec.DEPTH_GROUND})
-	uid, err = entityManager.Add(&platform2)
-	if err == nil {
-		lvl.addChild(uid)
-	}
-
+	// squares[0].SaveToFile()
+	fmt.Println("loading level")
 	ec.GetPlayerPtr().SetPosition(lvl.startPosition)
 	moveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, ec.GetPlayerPtr())
 	if err == nil {

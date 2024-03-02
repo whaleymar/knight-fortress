@@ -17,16 +17,11 @@ const (
 )
 
 func MakeBasicBlock(sheetOffsetX, sheetOffsetY int) Entity {
-	entity := Entity{
-		0,
-		"Platform",
-		&ComponentList{},
-		mgl32.Vec3{0.0, -0.5, DEPTH_GROUND},
-		&sync.RWMutex{},
-	}
+	entity := MakeEntity("Block")
+	entity.SetPosition(mgl32.Vec3{0.0, -0.5, DEPTH_GROUND})
 
 	entity.Components.Add(&CDrawable{
-		gfx.MakeRectVertices(16, 16), // this will get changed on frame one
+		[]float32{}, // set on frame one
 		gfx.MakeVao(),
 		gfx.MakeVbo(),
 		[2]float32{1.0, 1.0},
@@ -37,7 +32,7 @@ func MakeBasicBlock(sheetOffsetX, sheetOffsetY int) Entity {
 		},
 		gfx.TEX_MAIN,
 		&sync.RWMutex{},
-		true,
+		true, // calculate UV (and vertices) on first call to Update
 	})
 
 	entity.Components.Add(&CCollides{
@@ -45,6 +40,8 @@ func MakeBasicBlock(sheetOffsetX, sheetOffsetY int) Entity {
 		phys.RigidBody{phys.RIGIDBODY_STATIC, phys.RBSTATE_STILL},
 		true,
 	})
+
+	entity.Data = append(entity.Data, &CSerialize{entity.Name})
 
 	return entity
 }

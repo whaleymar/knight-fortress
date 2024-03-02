@@ -7,19 +7,57 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/whaleymar/knight-fortress/src/gfx"
 	"github.com/whaleymar/knight-fortress/src/phys"
+	"github.com/whaleymar/knight-fortress/src/sys"
+)
+
+const (
+	ASSET_DIR_ENTITY = "assets/entity"
 )
 
 type Entity struct {
-	Uid        uint64
+	Uid        uint64 // unique at runtime
 	Name       string
-	Components ComponentManager
+	Components *ComponentManager
+	Data       []PODComponent
 	Position   mgl32.Vec3
-	RWlock     *sync.RWMutex
+	*sync.RWMutex
+}
+
+func MakeEntity(name string) Entity {
+	return Entity{
+		0,
+		name,
+		&ComponentManager{},
+		[]PODComponent{},
+		mgl32.Vec3{},
+		&sync.RWMutex{},
+	}
+}
+
+func (entity *Entity) SaveToFile() error {
+	saveComp, err := GetPODComponent[*CSerialize](CMP_SERIALIZE, entity)
+	if err != nil {
+		return fmt.Errorf("Can't save %s entity because it does not have a serialize component", entity.Name)
+	}
+	var componentlist []interface{}
+	for _, component := range entity.Components.components {
+		componentlist = append(componentlist, component.GetSaveData())
+	}
+
+	data := struct {
+		Name       string
+		Components []interface{}
+	}{
+		Name:       entity.Name,
+		Components: componentlist,
+	}
+
+	return sys.SaveStruct(fmt.Sprintf("%s/%s.yml", ASSET_DIR_ENTITY, (*saveComp).FileName), data)
 }
 
 func (entity *Entity) GetPosition() mgl32.Vec3 {
-	entity.RWlock.RLock()
-	defer entity.RWlock.RUnlock()
+	entity.RLock()
+	defer entity.RUnlock()
 	return entity.Position
 }
 
@@ -39,12 +77,12 @@ func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
 }
 
 func (entity *Entity) SetPosition(position mgl32.Vec3) {
-	entity.RWlock.Lock()
-	defer entity.RWlock.Unlock()
+	entity.Lock()
+	defer entity.Unlock()
 	entity.Position = position
 }
 
-func (entity *Entity) GetComponentManager() ComponentManager {
+func (entity *Entity) GetComponentManager() *ComponentManager {
 	return entity.Components
 }
 

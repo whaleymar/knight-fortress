@@ -1,6 +1,7 @@
 package ec
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/whaleymar/knight-fortress/src/gfx"
@@ -24,37 +25,37 @@ type CDrawable struct {
 	scale            [2]float32
 	sprite           Sprite
 	textureIx        gfx.TextureSlot
-	rwlock           *sync.RWMutex
+	rwmutex          *sync.RWMutex
 	isUvUpdateNeeded bool
 }
 
 type Sprite struct { // spritesheet
-	sheetPosition [3]int // stores texture array position + x,y position in texture atlas
-	frameSize     [2]int
-	animManager   AnimationManager
+	SheetPosition [3]int // stores texture array position + x,y position in texture atlas
+	FrameSize     [2]int
+	AnimManager   AnimationManager
 }
 
 type AnimationManager struct {
-	anims     []Animation
-	animSpeed float32
+	Anims     []Animation
+	AnimSpeed float32
 	frame     int
 	frameTime float32
 	animIx    AnimationIndex
 }
 
 type Animation struct {
-	textureOffset [2]int // relative to Sprite.sheetPosition
-	frameCount    int
+	TextureOffset [2]int // relative to Sprite.sheetPosition
+	FrameCount    int
 }
 
 func (comp *CDrawable) update(entity *Entity) {
-	animManager := &comp.sprite.animManager
-	if animManager.animSpeed > 0.0 {
+	animManager := &comp.sprite.AnimManager
+	if animManager.AnimSpeed > 0.0 {
 		// check if should update animation frame
 		animManager.frameTime += sys.DeltaTime.Get()
-		if animManager.frameTime >= 1/animManager.animSpeed {
+		if animManager.frameTime >= 1/animManager.AnimSpeed {
 			animManager.frameTime = 0.0
-			animManager.frame = (animManager.frame + 1) % animManager.getAnimation().frameCount
+			animManager.frame = (animManager.frame + 1) % animManager.getAnimation().FrameCount
 			comp.isUvUpdateNeeded = true
 		}
 	}
@@ -64,13 +65,13 @@ func (comp *CDrawable) update(entity *Entity) {
 		var xMin, xMax, yMin, yMax float32
 		sheetSizeX, sheetSizeY := gfx.GetTextureManager().GetTextureSize(comp.textureIx, 0) // TODO hard coded array Index
 
-		pixelOffset := float32(comp.sprite.sheetPosition[0] + comp.sprite.frameSize[0]*(comp.sprite.animManager.getAnimation().textureOffset[0]+comp.sprite.animManager.frame))
+		pixelOffset := float32(comp.sprite.SheetPosition[0] + comp.sprite.FrameSize[0]*(comp.sprite.AnimManager.getAnimation().TextureOffset[0]+comp.sprite.AnimManager.frame))
 		xMin = pixelOffset / sheetSizeX
-		xMax = (pixelOffset + float32(comp.sprite.frameSize[0])) / sheetSizeX
+		xMax = (pixelOffset + float32(comp.sprite.FrameSize[0])) / sheetSizeX
 
-		pixelOffset = float32(comp.sprite.sheetPosition[1] + comp.sprite.frameSize[1]*comp.sprite.animManager.getAnimation().textureOffset[1])
+		pixelOffset = float32(comp.sprite.SheetPosition[1] + comp.sprite.FrameSize[1]*comp.sprite.AnimManager.getAnimation().TextureOffset[1])
 		yMin = pixelOffset / sheetSizeY
-		yMax = (pixelOffset + float32(comp.sprite.frameSize[1])) / sheetSizeY
+		yMax = (pixelOffset + float32(comp.sprite.FrameSize[1])) / sheetSizeY
 
 		comp.vertices = gfx.MakeRectVerticesWithUV(comp.getPixelSize(false), comp.getPixelSize(true), xMin, xMax, yMin, yMax)
 	}
@@ -86,24 +87,55 @@ func (comp *CDrawable) onDelete() {
 	comp.vbo.Free()
 }
 
-func (comp *CDrawable) getAnimation() Animation {
-	comp.rwlock.RLock()
-	defer comp.rwlock.RUnlock()
+func (comp *CDrawable) GetSaveData() interface{} {
+	return struct {
+		Scale     [2]float32
+		PixelData Sprite
+	}{
+		Scale:     comp.scale,
+		PixelData: comp.sprite,
+	}
+}
 
-	return comp.sprite.animManager.getAnimation()
+func LoadComponentDrawable(path string) (CDrawable, error) {
+	data := struct {
+		Scale     [2]float32
+		PixelData Sprite
+	}{}
+	err := sys.LoadStruct(path, &data)
+	if err != nil {
+		return CDrawable{}, fmt.Errorf("Couldn't load draw data from %s", path)
+	}
+	return CDrawable{
+		vertices:         gfx.SquareVertices,
+		vao:              gfx.MakeVao(),
+		vbo:              gfx.MakeVbo(),
+		scale:            data.Scale,
+		sprite:           data.PixelData,
+		textureIx:        gfx.TEX_MAIN,
+		rwmutex:          &sync.RWMutex{},
+		isUvUpdateNeeded: true,
+	}, nil
+}
+
+func (comp *CDrawable) getAnimation() Animation {
+	comp.rwmutex.RLock()
+	defer comp.rwmutex.RUnlock()
+
+	return comp.sprite.AnimManager.getAnimation()
 }
 
 func (comp *CDrawable) setAnimation(animIx AnimationIndex) {
-	comp.rwlock.Lock()
-	defer comp.rwlock.Unlock()
+	comp.rwmutex.Lock()
+	defer comp.rwmutex.Unlock()
 
-	if comp.sprite.animManager.setAnimation(animIx) {
+	if comp.sprite.AnimManager.setAnimation(animIx) {
 		comp.isUvUpdateNeeded = true
 	}
 }
 
 func (comp *CDrawable) getFrameSize() (float32, float32) {
-	frameSize := comp.sprite.frameSize
+	frameSize := comp.sprite.FrameSize
 	return float32(frameSize[0]), float32(frameSize[1])
 }
 
@@ -124,17 +156,17 @@ func (comp *CDrawable) getPixelSize(vertical bool) float32 {
 	if vertical {
 		ix = 1
 	}
-	return float32(comp.sprite.frameSize[ix]*gfx.PixelsPerTexel) * comp.scale[ix]
+	return float32(comp.sprite.FrameSize[ix]*gfx.PixelsPerTexel) * comp.scale[ix]
 }
 
 func (animManager *AnimationManager) getAnimation() Animation {
-	return animManager.anims[animManager.animIx]
+	return animManager.Anims[animManager.animIx]
 }
 
 func (animManager *AnimationManager) setAnimation(animIx AnimationIndex) bool {
 	if animIx == animManager.animIx {
 		return false
-	} else if int(animIx) >= len(animManager.anims) {
+	} else if int(animIx) >= len(animManager.Anims) {
 		return false
 	}
 	animManager.animIx = animIx

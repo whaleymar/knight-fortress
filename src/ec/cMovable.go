@@ -57,6 +57,54 @@ func (comp *CMovable) getType() ComponentType {
 
 func (comp *CMovable) onDelete() {}
 
+func (comp *CMovable) GetSaveData() interface{} {
+	followTargetName := ""
+	if comp.followTarget != nil {
+		// saveComp, err := GetPODComponent[*CSerialize](CMP_SERIALIZE, comp.followTarget)
+		// if err == nil {
+		//     followTargetName = (*saveComp).FileName
+		// }
+		followTargetName = comp.followTarget.Name
+	}
+
+	return struct {
+		SpeedMax           float32
+		FollowTarget       string
+		IsFrictionActive   bool
+		IsPlayerControlled bool
+	}{
+		SpeedMax:           comp.speedMax,
+		FollowTarget:       followTargetName,
+		IsFrictionActive:   comp.isFrictionActive,
+		IsPlayerControlled: comp.isPlayerControlled,
+	}
+}
+
+func LoadComponentMovable(path string) (CMovable, error) {
+	data := struct {
+		SpeedMax           float32
+		FollowTarget       string
+		IsFrictionActive   bool
+		IsPlayerControlled bool
+	}{}
+	err := sys.LoadStruct(path, data)
+	if err != nil {
+		return CMovable{}, fmt.Errorf("Couldn't load move data from %s", path)
+	}
+	followTarget, err := GetEntityManager().GetEntityWithName(data.FollowTarget)
+	if err != nil {
+		followTarget = nil
+	}
+	return CMovable{
+		mgl32.Vec3{},
+		mgl32.Vec3{},
+		data.SpeedMax,
+		data.IsFrictionActive,
+		followTarget,
+		data.IsPlayerControlled,
+	}, nil
+}
+
 func (comp *CMovable) IsMoving() bool {
 	return comp.velocity[0] != 0.0 || comp.velocity[1] != 0.0
 }

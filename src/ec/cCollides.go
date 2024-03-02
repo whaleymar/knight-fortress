@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/go-gl/mathgl/mgl32"
+	// "github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
+	"github.com/whaleymar/knight-fortress/src/sys"
 )
 
 var _ = fmt.Println
@@ -35,6 +37,39 @@ func (comp *CCollides) getType() ComponentType {
 
 func (comp *CCollides) onDelete() {}
 
+func (comp *CCollides) GetSaveData() interface{} {
+	return struct {
+		Collider  phys.SuperCollider
+		RigidBody phys.RigidBody
+	}{
+		Collider:  comp.collider.MakeSuperCollider(),
+		RigidBody: comp.RigidBody,
+	}
+}
+
+func LoadComponentCollider(path string) (CCollides, error) {
+	colliderdata := struct {
+		Collider  phys.SuperCollider
+		RigidBody phys.RigidBody
+	}{}
+
+	err := sys.LoadStruct(path, &colliderdata)
+	if err != nil {
+		return CCollides{}, fmt.Errorf("Couldn't load collision data from %s", path)
+	}
+
+	collider, err := phys.ExtractCollider(colliderdata.Collider)
+	if err != nil {
+		return CCollides{}, fmt.Errorf("Error loading collider struct from %s due to %s", path, err)
+	}
+
+	return CCollides{
+		collider,
+		colliderdata.RigidBody,
+		true,
+	}, nil
+}
+
 func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 	collidesStatic := *GetComponentUnsafe[*CCollides](CMP_COLLIDES, staticEntity)
 
@@ -55,17 +90,37 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 
 	// stop movement in that direction and correct position
 	var newPoint phys.Point
+	// TODO get rid of first condition + elses
 	if hit.Normal.X != 0 && hit.Normal.Y != 0 {
-		moveComponent.velocity[0] = 0.0
-		moveComponent.velocity[1] = 0.0
-		newPoint = nextPoint.Sub(hit.Delta)
+		fmt.Println("corner collision")
+		// zero out the slower axis
+		if moveComponent.velocity[0] >= moveComponent.velocity[1] {
+			moveComponent.velocity[1] = 0.0
+			newPoint = phys.Point{initialPoint.X, nextPoint.Y - hit.Delta.Y}
+		} else {
+			moveComponent.velocity[0] = 0.0
+			newPoint = phys.Point{nextPoint.X - hit.Delta.X, initialPoint.Y}
+		}
+
+		// original code:
+		// moveComponent.velocity[0] = 0.0
+		// moveComponent.velocity[1] = 0.0
+		// newPoint = nextPoint.Sub(hit.Delta)
 		if hit.Normal.Y == -1 {
 			collidesMovable.IsGrounded = true
 			collidesMovable.RigidBody.State = phys.RBSTATE_GROUNDED
 		}
 	} else if hit.Normal.X != 0 {
+		fmt.Println("hit x", hit)
 		moveComponent.velocity[0] = 0.0
 		newPoint = phys.Point{nextPoint.X - hit.Delta.X, initialPoint.Y}
+		// if math.Abs(hit.Delta.X) > phys.MIN_DELTA_HALT {
+		// 	fmt.Println("hit x", hit)
+		// 	moveComponent.velocity[0] = 0.0
+		// 	newPoint = phys.Point{nextPoint.X - hit.Delta.X, initialPoint.Y}
+		// } else {
+		// 	return
+		// }
 	} else {
 		moveComponent.velocity[1] = 0.0
 		newPoint = phys.Point{initialPoint.X, nextPoint.Y - hit.Delta.Y}
