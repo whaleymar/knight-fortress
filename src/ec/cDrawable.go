@@ -87,25 +87,35 @@ func (comp *CDrawable) onDelete() {
 	comp.vbo.Free()
 }
 
-func (comp *CDrawable) GetSaveData() interface{} {
-	return struct {
+func (comp *CDrawable) GetSaveData() componentHolder {
+	return makeComponentHolder(comp.getType(), struct {
 		Scale     [2]float32
 		PixelData Sprite
 	}{
 		Scale:     comp.scale,
 		PixelData: comp.sprite,
-	}
+	})
 }
 
-func LoadComponentDrawable(path string) (CDrawable, error) {
-	data := struct {
+func LoadComponentDrawable(componentData interface{}) (CDrawable, error) {
+	// data := struct {
+	// 	Scale     [2]float32
+	// 	PixelData Sprite
+	// }{}
+	// err := sys.LoadStruct(path, &data)
+	// if err != nil {
+	// 	return CDrawable{}, fmt.Errorf("Couldn't load draw data from %s", path)
+	// }
+	type savedata struct {
 		Scale     [2]float32
 		PixelData Sprite
-	}{}
-	err := sys.LoadStruct(path, &data)
-	if err != nil {
-		return CDrawable{}, fmt.Errorf("Couldn't load draw data from %s", path)
 	}
+
+	data, ok := componentData.(savedata)
+	if !ok {
+		return CDrawable{}, fmt.Errorf("Couldn't cast data to CDrawable")
+	}
+
 	return CDrawable{
 		vertices:         gfx.SquareVertices,
 		vao:              gfx.MakeVao(),

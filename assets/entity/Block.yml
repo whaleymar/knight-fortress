@@ -1,32 +1,36 @@
 name: Block
 components:
-    - scale:
-        - 1
-        - 1
-      pixeldata:
-        sheetposition:
-            - 0
-            - 16
-            - 0
-        framesize:
-            - 8
-            - 8
-        animmanager:
-            anims:
-                - textureoffset:
-                    - 0
-                    - 0
-                  framecount: 1
-            animspeed: 0
-    - collider:
-        collidertype: 0
-        center:
-            x: -32
-            "y": -0.5
-        half:
-            x: 0.125
-            "y": 0.125
-        radius: 0
-      rigidbody:
-        rbtype: 1
-        state: 0
+    - ctype: 1
+      compdata:
+        scale:
+            - 1
+            - 1
+        pixeldata:
+            sheetposition:
+                - 0
+                - 16
+                - 0
+            framesize:
+                - 8
+                - 8
+            animmanager:
+                anims:
+                    - textureoffset:
+                        - 0
+                        - 0
+                      framecount: 1
+                animspeed: 0
+    - ctype: 2
+      compdata:
+        collider:
+            collidertype: 0
+            center:
+                x: -32
+                "y": -0.5
+            half:
+                x: 0.125
+                "y": 0.125
+            radius: 0
+        rigidbody:
+            rbtype: 1
+            state: 0

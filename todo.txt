@@ -2,7 +2,6 @@ short term:
 - load entity/components from YAML
     - load level config dynamically
         - pointer to entity config + position data?
-    - why is level.Load() running twice on startup?
 
 - collision: GHOST vertices
 

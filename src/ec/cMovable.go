@@ -57,7 +57,7 @@ func (comp *CMovable) getType() ComponentType {
 
 func (comp *CMovable) onDelete() {}
 
-func (comp *CMovable) GetSaveData() interface{} {
+func (comp *CMovable) GetSaveData() componentHolder {
 	followTargetName := ""
 	if comp.followTarget != nil {
 		// saveComp, err := GetPODComponent[*CSerialize](CMP_SERIALIZE, comp.followTarget)
@@ -67,7 +67,7 @@ func (comp *CMovable) GetSaveData() interface{} {
 		followTargetName = comp.followTarget.Name
 	}
 
-	return struct {
+	return makeComponentHolder(comp.getType(), struct {
 		SpeedMax           float32
 		FollowTarget       string
 		IsFrictionActive   bool
@@ -77,20 +77,32 @@ func (comp *CMovable) GetSaveData() interface{} {
 		FollowTarget:       followTargetName,
 		IsFrictionActive:   comp.isFrictionActive,
 		IsPlayerControlled: comp.isPlayerControlled,
-	}
+	})
 }
 
-func LoadComponentMovable(path string) (CMovable, error) {
-	data := struct {
+func LoadComponentMovable(componentData interface{}) (CMovable, error) {
+	// data := struct {
+	// 	SpeedMax           float32
+	// 	FollowTarget       string
+	// 	IsFrictionActive   bool
+	// 	IsPlayerControlled bool
+	// }{}
+	// err := sys.LoadStruct(path, data)
+	// if err != nil {
+	// 	return CMovable{}, fmt.Errorf("Couldn't load move data from %s", path)
+	// }
+
+	type savedata struct {
 		SpeedMax           float32
 		FollowTarget       string
 		IsFrictionActive   bool
 		IsPlayerControlled bool
-	}{}
-	err := sys.LoadStruct(path, data)
-	if err != nil {
-		return CMovable{}, fmt.Errorf("Couldn't load move data from %s", path)
 	}
+	data, ok := componentData.(savedata)
+	if !ok {
+		return CMovable{}, fmt.Errorf("Couldn't cast data to CMovable")
+	}
+
 	followTarget, err := GetEntityManager().GetEntityWithName(data.FollowTarget)
 	if err != nil {
 		followTarget = nil

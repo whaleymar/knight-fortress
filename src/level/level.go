@@ -38,19 +38,30 @@ func (lvl *level) addChild(uid uint64) {
 func (lvl *level) Load() {
 	entityManager := ec.GetEntityManager()
 
-	nSquares := 256
-	squares := make([]ec.Entity, 256)
-	for i := 0; i < nSquares; i++ {
-		squares[i] = ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
-		squares[i].SetPosition(mgl32.Vec3{(float32(i) - 128) * 0.25, -0.5, ec.DEPTH_GROUND})
+	// nSquares := 256
+	// squares := make([]ec.Entity, 256)
+	// for i := 0; i < nSquares; i++ {
+	// 	squares[i] = ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
+	// 	squares[i].SetPosition(mgl32.Vec3{(float32(i) - 128) * 0.25, -0.5, ec.DEPTH_GROUND})
+	//
+	// 	uid, err := entityManager.Add(&squares[i])
+	// 	if err == nil {
+	// 		lvl.addChild(uid)
+	// 	}
+	// }
+	//
+	// squares[0].SaveToFile()
 
-		uid, err := entityManager.Add(&squares[i])
+	square, err := ec.LoadEntity("Block")
+	if err == nil {
+		uid, err := entityManager.Add(&square)
 		if err == nil {
 			lvl.addChild(uid)
 		}
+	} else {
+		fmt.Println(err)
 	}
 
-	// squares[0].SaveToFile()
 	fmt.Println("loading level")
 	ec.GetPlayerPtr().SetPosition(lvl.startPosition)
 	moveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, ec.GetPlayerPtr())

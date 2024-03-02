@@ -39,20 +39,42 @@ func (entity *Entity) SaveToFile() error {
 	if err != nil {
 		return fmt.Errorf("Can't save %s entity because it does not have a serialize component", entity.Name)
 	}
-	var componentlist []interface{}
+	var componentlist []componentHolder
 	for _, component := range entity.Components.components {
 		componentlist = append(componentlist, component.GetSaveData())
 	}
 
 	data := struct {
 		Name       string
-		Components []interface{}
+		Components []componentHolder
 	}{
 		Name:       entity.Name,
 		Components: componentlist,
 	}
 
-	return sys.SaveStruct(fmt.Sprintf("%s/%s.yml", ASSET_DIR_ENTITY, (*saveComp).FileName), data)
+	return sys.SaveStruct(getEntityPath((*saveComp).FileName), data)
+}
+
+func LoadEntity(filename string) (Entity, error) {
+	data := struct {
+		Name       string
+		Components []componentHolder
+	}{}
+	err := sys.LoadStruct(getEntityPath(filename), data)
+	entity := Entity{}
+	if err != nil {
+		return entity, err
+	}
+	entity.Name = data.Name
+	for _, componentHolder := range data.Components {
+		component, err := loadComponent(componentHolder)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		entity.GetComponentManager().Add(component)
+	}
+	return entity, nil
 }
 
 func (entity *Entity) GetPosition() mgl32.Vec3 {
@@ -116,4 +138,8 @@ func (entity *Entity) Init() error {
 		(*cmpCollides).collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
 	}
 	return nil
+}
+
+func getEntityPath(filename string) string {
+	return fmt.Sprintf("%s/%s.yml", ASSET_DIR_ENTITY, filename)
 }
