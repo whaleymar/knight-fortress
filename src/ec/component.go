@@ -35,17 +35,17 @@ type PODComponent interface {
 // for saving/loading
 type componentHolder struct {
 	CType    ComponentType
-	CompData interface{}
+	CompData string
 }
 
-func makeComponentHolder(cType ComponentType, comp interface{}) componentHolder {
+func makeComponentHolder(cType ComponentType, comp string) componentHolder {
 	return componentHolder{
 		CType:    cType,
 		CompData: comp,
 	}
 }
 
-func loadComponent(compHolder componentHolder) (Component, error) {
+func loadComponent(compHolder componentHolder) (*Component, error) {
 	var comp Component
 	var err error
 	switch compHolder.CType {
@@ -71,5 +71,5 @@ func loadComponent(compHolder componentHolder) (Component, error) {
 		return nil, err
 	}
 
-	return comp, nil
+	return &comp, nil
 }

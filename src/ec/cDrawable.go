@@ -88,32 +88,27 @@ func (comp *CDrawable) onDelete() {
 }
 
 func (comp *CDrawable) GetSaveData() componentHolder {
-	return makeComponentHolder(comp.getType(), struct {
+	data, err := sys.StructToYaml(struct {
 		Scale     [2]float32
 		PixelData Sprite
 	}{
 		Scale:     comp.scale,
 		PixelData: comp.sprite,
 	})
+	if err != nil {
+		panic(err)
+	}
+	return makeComponentHolder(comp.getType(), data)
 }
 
-func LoadComponentDrawable(componentData interface{}) (CDrawable, error) {
-	// data := struct {
-	// 	Scale     [2]float32
-	// 	PixelData Sprite
-	// }{}
-	// err := sys.LoadStruct(path, &data)
-	// if err != nil {
-	// 	return CDrawable{}, fmt.Errorf("Couldn't load draw data from %s", path)
-	// }
-	type savedata struct {
+func LoadComponentDrawable(componentData string) (CDrawable, error) {
+	data := struct {
 		Scale     [2]float32
 		PixelData Sprite
-	}
-
-	data, ok := componentData.(savedata)
-	if !ok {
-		return CDrawable{}, fmt.Errorf("Couldn't cast data to CDrawable")
+	}{}
+	err := sys.YamlToStruct(componentData, &data)
+	if err != nil {
+		return CDrawable{}, fmt.Errorf("Couldn't load draw data from %s", componentData)
 	}
 
 	return CDrawable{

@@ -44,35 +44,23 @@ func (entity *Entity) SaveToFile() error {
 		componentlist = append(componentlist, component.GetSaveData())
 	}
 
-	data := struct {
-		Name       string
-		Components []componentHolder
-	}{
-		Name:       entity.Name,
-		Components: componentlist,
-	}
-
-	return sys.SaveStruct(getEntityPath((*saveComp).FileName), data)
+	return sys.SaveStruct(getEntityPath((*saveComp).FileName), componentlist)
 }
 
 func LoadEntity(filename string) (Entity, error) {
-	data := struct {
-		Name       string
-		Components []componentHolder
-	}{}
-	err := sys.LoadStruct(getEntityPath(filename), data)
-	entity := Entity{}
+	var data []componentHolder
+	err := sys.LoadStruct(getEntityPath(filename), &data)
 	if err != nil {
-		return entity, err
+		return Entity{}, err
 	}
-	entity.Name = data.Name
-	for _, componentHolder := range data.Components {
+	entity := MakeEntity(filename)
+	for _, componentHolder := range data {
 		component, err := loadComponent(componentHolder)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		entity.GetComponentManager().Add(component)
+		entity.GetComponentManager().Add(*component)
 	}
 	return entity, nil
 }

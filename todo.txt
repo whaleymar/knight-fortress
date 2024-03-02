@@ -1,7 +1,7 @@
 short term:
-- load entity/components from YAML
-    - load level config dynamically
-        - pointer to entity config + position data?
+- clean up entity naming
+- load level config dynamically
+    - pointer to entity config + position data?
 
 - collision: GHOST vertices
 

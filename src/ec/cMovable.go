@@ -66,8 +66,7 @@ func (comp *CMovable) GetSaveData() componentHolder {
 		// }
 		followTargetName = comp.followTarget.Name
 	}
-
-	return makeComponentHolder(comp.getType(), struct {
+	data, err := sys.StructToYaml(struct {
 		SpeedMax           float32
 		FollowTarget       string
 		IsFrictionActive   bool
@@ -78,29 +77,22 @@ func (comp *CMovable) GetSaveData() componentHolder {
 		IsFrictionActive:   comp.isFrictionActive,
 		IsPlayerControlled: comp.isPlayerControlled,
 	})
+	if err != nil {
+		panic(err)
+	}
+	return makeComponentHolder(comp.getType(), data)
 }
 
-func LoadComponentMovable(componentData interface{}) (CMovable, error) {
-	// data := struct {
-	// 	SpeedMax           float32
-	// 	FollowTarget       string
-	// 	IsFrictionActive   bool
-	// 	IsPlayerControlled bool
-	// }{}
-	// err := sys.LoadStruct(path, data)
-	// if err != nil {
-	// 	return CMovable{}, fmt.Errorf("Couldn't load move data from %s", path)
-	// }
-
-	type savedata struct {
+func LoadComponentMovable(componentData string) (CMovable, error) {
+	data := struct {
 		SpeedMax           float32
 		FollowTarget       string
 		IsFrictionActive   bool
 		IsPlayerControlled bool
-	}
-	data, ok := componentData.(savedata)
-	if !ok {
-		return CMovable{}, fmt.Errorf("Couldn't cast data to CMovable")
+	}{}
+	err := sys.YamlToStruct(componentData, data)
+	if err != nil {
+		return CMovable{}, fmt.Errorf("Couldn't load move data from %s", componentData)
 	}
 
 	followTarget, err := GetEntityManager().GetEntityWithName(data.FollowTarget)

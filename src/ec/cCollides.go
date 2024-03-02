@@ -6,6 +6,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	// "github.com/whaleymar/knight-fortress/src/math"
 	"github.com/whaleymar/knight-fortress/src/phys"
+	"github.com/whaleymar/knight-fortress/src/sys"
 	// "github.com/whaleymar/knight-fortress/src/sys"
 )
 
@@ -38,34 +39,28 @@ func (comp *CCollides) getType() ComponentType {
 func (comp *CCollides) onDelete() {}
 
 func (comp *CCollides) GetSaveData() componentHolder {
-	return makeComponentHolder(comp.getType(), struct {
+	data, err := sys.StructToYaml(struct {
 		Collider  phys.SuperCollider
 		RigidBody phys.RigidBody
 	}{
 		Collider:  comp.collider.MakeSuperCollider(),
 		RigidBody: comp.RigidBody,
 	})
+	if err != nil {
+		panic(err)
+	}
+	return makeComponentHolder(comp.getType(), data)
 }
 
-func LoadComponentCollider(componentData interface{}) (CCollides, error) {
-	// colliderdata := struct {
-	// 	Collider  phys.SuperCollider
-	// 	RigidBody phys.RigidBody
-	// }{}
-
-	// err := sys.LoadStruct(path, &colliderdata)
-	// if err != nil {
-	// 	return CCollides{}, fmt.Errorf("Couldn't load collision data from %s", path)
-	// }
-
-	type savedata struct {
+func LoadComponentCollider(componentData string) (CCollides, error) {
+	colliderdata := struct {
 		Collider  phys.SuperCollider
 		RigidBody phys.RigidBody
-	}
+	}{}
 
-	colliderdata, ok := componentData.(savedata)
-	if !ok {
-		return CCollides{}, fmt.Errorf("Couldn't cast data to SuperCollider")
+	err := sys.YamlToStruct(componentData, &colliderdata)
+	if err != nil {
+		return CCollides{}, fmt.Errorf("Couldn't load collision data from %s", componentData)
 	}
 
 	collider, err := phys.ExtractCollider(colliderdata.Collider)
