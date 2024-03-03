@@ -1,6 +1,6 @@
 short term:
-- clean up entity naming
-- clean up serialization code
+- clean up entity naming / POD stuff
+- clean up serialization code for entity
 - key binding to save unique entities
 
 - collision: GHOST vertices
@@ -25,5 +25,4 @@ when I need it:
 - event flow system
 - text rendering
 - 2d texture array
-- entity config files + hot reloading
 - parallel everything

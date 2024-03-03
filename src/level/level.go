@@ -16,7 +16,7 @@ const (
 	ASSET_DIR_LEVEL    = "assets/level"
 )
 
-var _LEVEL_LOCK = &sync.Mutex{}
+var _LEVEL_LOCK = &sync.RWMutex{}
 var levelPtr *level
 
 func GetCurrentLevel() *level {
@@ -39,13 +39,14 @@ func TryLoadLevel(levelname string) error {
 	defer _LEVEL_LOCK.Unlock()
 
 	if levelPtr != nil {
-		levelPtr.Free()
+		levelPtr.free()
 	}
 	newLevel, err := loadLevel(levelname)
 	if err != nil {
 		return err
 	}
 	levelPtr = &newLevel
+	levelPtr.Reset()
 	return nil
 }
 
@@ -61,43 +62,7 @@ func (lvl *level) addChild(uid uint64) {
 	lvl.entityIDs = append(lvl.entityIDs, uid)
 }
 
-func (lvl *level) Load() error {
-	// entityManager := ec.GetEntityManager()
-	//
-	// nSquares := 256
-	// squares := make([]ec.Entity, 256)
-	// for i := 0; i < nSquares; i++ {
-	// 	squares[i] = ec.MakeBasicBlock(ec.SHEETOFFSET_X_GRASS, ec.SHEETOFFSET_Y_GRASS)
-	// 	squares[i].SetPosition(mgl32.Vec3{(float32(i) - 128) * 0.25, -0.5, ec.DEPTH_GROUND})
-	//
-	// 	uid, err := entityManager.Add(&squares[i])
-	// 	if err == nil {
-	// 		lvl.addChild(uid)
-	// 	}
-	// }
-
-	// squares[0].SaveToFile()
-
-	// lvl.SaveToFile()
-
-	// square, err := ec.LoadEntity("Block")
-	// if err == nil {
-	// 	uid, err := entityManager.Add(&square)
-	// 	if err == nil {
-	// 		lvl.addChild(uid)
-	// 	}
-	// } else {
-	// 	fmt.Println(err)
-	// }
-
-	// lvl.startPosition = newLevel.startPosition
-	// lvl.entityIDs = newLevel.entityIDs
-	// lvl.Reset()
-
-	return nil
-}
-
-func (lvl *level) Free() {
+func (lvl *level) free() {
 	entityManager := ec.GetEntityManager()
 	for _, uid := range lvl.entityIDs {
 		entityManager.Remove(uid)
@@ -106,7 +71,6 @@ func (lvl *level) Free() {
 }
 
 func (lvl *level) Reset() {
-	fmt.Println("loading level")
 	ec.GetPlayerPtr().SetPosition(lvl.startPosition)
 	moveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, ec.GetPlayerPtr())
 	if err == nil {
@@ -114,17 +78,9 @@ func (lvl *level) Reset() {
 	}
 }
 
-func (lvl *level) Reload() error {
-	lvl.Free()
-	newLevel, err := loadLevel(lvl.name)
-	if err != nil {
-		return err
-	}
-	lvl = &newLevel
-	return nil
-}
-
 func (lvl *level) SaveToFile() error {
+	_LEVEL_LOCK.RLock()
+	_LEVEL_LOCK.RUnlock()
 	type entitydata struct {
 		EntityName string
 		Position   mgl32.Vec3
@@ -229,7 +185,8 @@ func CreateLevelControls() {
 		Key:   glfw.Key9,
 		State: sys.BUTTONSTATE_OFF,
 		Callback: func(state sys.ButtonState) {
-			GetCurrentLevel().Reload()
+			currentLevelName := GetCurrentLevel().name
+			TryLoadLevel(currentLevelName)
 		},
 		StateTimeLimit:   0.0,
 		StateTimeElapsed: 0.0,
