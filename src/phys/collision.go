@@ -90,6 +90,9 @@ func (this *AABB) CheckCollision(other *Collider) Hit {
 }
 
 func (this *AABB) CheckCollisionAABB(other *AABB) Hit {
+
+	// fmt.Println("checking ", this, " vs ", other)
+
 	// yoinked from https://noonat.github.io/intersect/
 	hit := Hit{}
 

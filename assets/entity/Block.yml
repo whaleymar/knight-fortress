@@ -1,5 +1,5 @@
 - ctype: 1
-  compdata: |
+  yamldata: |
     scale:
         - 1
         - 1
@@ -19,7 +19,7 @@
                   framecount: 1
             animspeed: 0
 - ctype: 2
-  compdata: |
+  yamldata: |
     collider:
         collidertype: 0
         center:

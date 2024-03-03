@@ -48,6 +48,7 @@ func (entity *Entity) SaveToFile() error {
 }
 
 func LoadEntity(filename string) (Entity, error) {
+	// TODO change to struct
 	var data []componentHolder
 	err := sys.LoadStruct(getEntityPath(filename), &data)
 	if err != nil {
@@ -71,7 +72,7 @@ func (entity *Entity) GetPosition() mgl32.Vec3 {
 	return entity.Position
 }
 
-func (entity *Entity) GetBottomLeftPosition() mgl32.Vec3 {
+func (entity *Entity) GetDrawPosition() mgl32.Vec3 {
 	// if entity is drawable, return position of the bottom left point of its vertex array
 	position := entity.GetPosition()
 	tmp, err := GetComponent[*CDrawable](CMP_DRAWABLE, entity)
@@ -126,6 +127,22 @@ func (entity *Entity) Init() error {
 		(*cmpCollides).collider.SetPosition(phys.Vec2Point(entity.GetPosition()))
 	}
 	return nil
+}
+
+func (entity *Entity) Copy() (Entity, error) {
+	newComponentList, err := entity.Components.Copy()
+	if err != nil {
+		return Entity{}, err
+	}
+	return Entity{
+		entity.Uid,
+		entity.Name,
+		&ComponentManager{newComponentList},
+		entity.Data,
+		entity.Position,
+		&sync.RWMutex{},
+	}, nil
+
 }
 
 func getEntityPath(filename string) string {

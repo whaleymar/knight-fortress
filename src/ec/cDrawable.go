@@ -87,6 +87,12 @@ func (comp *CDrawable) onDelete() {
 	comp.vbo.Free()
 }
 
+func (comp *CDrawable) Copy() (Component, error) {
+	cHolder := comp.GetSaveData()
+	newComp, err := LoadComponentDrawable(cHolder.YamlData)
+	return &newComp, err
+}
+
 func (comp *CDrawable) GetSaveData() componentHolder {
 	data, err := sys.StructToYaml(struct {
 		Scale     [2]float32

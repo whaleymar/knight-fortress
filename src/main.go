@@ -72,7 +72,11 @@ func main() {
 		panic("Couldn't load camera")
 	}
 
-	level.GetCurrentLevel().Load()
+	// level.GetCurrentLevel().Load()
+	err = level.TryLoadLevel(level.LEVEL_NAME_DEFAULT)
+	if err != nil {
+		panic(err)
+	}
 	ec.CreatePlayerControls()
 	level.CreateLevelControls()
 
@@ -115,6 +119,7 @@ func main() {
 		// TODO can use rigidbodytype instead of cmp-movable?
 		physicsEntities := entityManager.GetEntitiesWithComponent(ec.CMP_COLLIDES)
 		movableColliders := entityManager.GetEntitiesWithManyComponents(ec.CMP_COLLIDES, ec.CMP_MOVABLE)
+
 		for _, movableEntity := range movableColliders {
 			moveComponent := *ec.GetComponentUnsafe[*ec.CMovable](ec.CMP_MOVABLE, movableEntity)
 			if !moveComponent.IsMoving() {
@@ -163,7 +168,7 @@ func main() {
 			return cmp.Compare(e1.GetPosition().Z(), e2.GetPosition().Z())
 		})
 		for _, entity := range drawableEntities {
-			screenCoords := ec.GetScreenCoordinates(entity.GetBottomLeftPosition())
+			screenCoords := ec.GetScreenCoordinates(entity.GetDrawPosition())
 			gl.Uniform3fv(drawOffsetUniform, 1, &screenCoords[0])
 			drawComponent := *ec.GetComponentUnsafe[*ec.CDrawable](ec.CMP_DRAWABLE, entity)
 
@@ -211,8 +216,8 @@ func InitControls(window *glfw.Window) {
 func updateFPS(fpsCh <-chan float32) {
 	for fps := range fpsCh {
 		// Move cursor up and to the beginning of the line
-		// fmt.Print("\033[F\033[K")
-		// fmt.Printf("FPS: %f\n", fps)
+		fmt.Print("\033[F\033[K")
+		fmt.Printf("FPS: %f\n", fps)
 		_ = fps
 	}
 }

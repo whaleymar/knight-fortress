@@ -20,6 +20,7 @@ type Component interface {
 	update(*Entity)
 	getType() ComponentType
 	onDelete()
+	Copy() (Component, error)
 	GetSaveData() componentHolder
 }
 
@@ -35,13 +36,13 @@ type PODComponent interface {
 // for saving/loading
 type componentHolder struct {
 	CType    ComponentType
-	CompData string
+	YamlData string
 }
 
 func makeComponentHolder(cType ComponentType, comp string) componentHolder {
 	return componentHolder{
 		CType:    cType,
-		CompData: comp,
+		YamlData: comp,
 	}
 }
 
@@ -50,17 +51,17 @@ func loadComponent(compHolder componentHolder) (*Component, error) {
 	var err error
 	switch compHolder.CType {
 	case CMP_MOVABLE:
-		component, tmpErr := LoadComponentMovable(compHolder.CompData)
+		component, tmpErr := LoadComponentMovable(compHolder.YamlData)
 		comp = &component
 		err = tmpErr
 		break
 	case CMP_COLLIDES:
-		component, tmpErr := LoadComponentCollider(compHolder.CompData)
+		component, tmpErr := LoadComponentCollider(compHolder.YamlData)
 		comp = &component
 		err = tmpErr
 		break
 	case CMP_DRAWABLE:
-		component, tmpErr := LoadComponentDrawable(compHolder.CompData)
+		component, tmpErr := LoadComponentDrawable(compHolder.YamlData)
 		comp = &component
 		err = tmpErr
 		break

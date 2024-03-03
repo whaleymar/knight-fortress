@@ -38,6 +38,13 @@ func (comp *CCollides) getType() ComponentType {
 
 func (comp *CCollides) onDelete() {}
 
+func (comp *CCollides) Copy() (Component, error) {
+	// manual deep copy is too hard :/
+	cHolder := comp.GetSaveData()
+	newComp, err := LoadComponentCollider(cHolder.YamlData)
+	return &newComp, err
+}
+
 func (comp *CCollides) GetSaveData() componentHolder {
 	data, err := sys.StructToYaml(struct {
 		Collider  phys.SuperCollider
@@ -92,7 +99,6 @@ func TryCollideStaticDynamic(staticEntity, movableEntity *Entity) {
 		collidesMovable.collider.SetPosition(initialPoint)
 		return
 	}
-
 	// stop movement in that direction and correct position
 	var newPoint phys.Point
 	// TODO get rid of first condition + elses

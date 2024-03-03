@@ -11,6 +11,11 @@ import (
 	"github.com/whaleymar/knight-fortress/src/sys"
 )
 
+const (
+	LEVEL_NAME_DEFAULT = "Demo"
+	ASSET_DIR_LEVEL    = "assets/level"
+)
+
 var _LEVEL_LOCK = &sync.Mutex{}
 var levelPtr *level
 
@@ -19,13 +24,34 @@ func GetCurrentLevel() *level {
 		_LEVEL_LOCK.Lock()
 		defer _LEVEL_LOCK.Unlock()
 		if levelPtr == nil {
-			levelPtr = &level{}
+			levelPtr = &level{
+				LEVEL_NAME_DEFAULT,
+				phys.ORIGIN,
+				[]uint64{},
+			}
 		}
 	}
 	return levelPtr
 }
 
+func TryLoadLevel(levelname string) error {
+	_LEVEL_LOCK.Lock()
+	defer _LEVEL_LOCK.Unlock()
+
+	if levelPtr != nil {
+		levelPtr.Free()
+	}
+	newLevel, err := loadLevel(levelname)
+	if err != nil {
+		return err
+	}
+	levelPtr = &newLevel
+	return nil
+}
+
+// TODO needs mutex
 type level struct {
+	name          string
 	startPosition mgl32.Vec3
 	entityIDs     []uint64
 	// TODO level data path/handle, metadata like the name for quick access
@@ -35,9 +61,9 @@ func (lvl *level) addChild(uid uint64) {
 	lvl.entityIDs = append(lvl.entityIDs, uid)
 }
 
-func (lvl *level) Load() {
-	entityManager := ec.GetEntityManager()
-
+func (lvl *level) Load() error {
+	// entityManager := ec.GetEntityManager()
+	//
 	// nSquares := 256
 	// squares := make([]ec.Entity, 256)
 	// for i := 0; i < nSquares; i++ {
@@ -49,19 +75,37 @@ func (lvl *level) Load() {
 	// 		lvl.addChild(uid)
 	// 	}
 	// }
-	//
+
 	// squares[0].SaveToFile()
 
-	square, err := ec.LoadEntity("Block")
-	if err == nil {
-		uid, err := entityManager.Add(&square)
-		if err == nil {
-			lvl.addChild(uid)
-		}
-	} else {
-		fmt.Println(err)
-	}
+	// lvl.SaveToFile()
 
+	// square, err := ec.LoadEntity("Block")
+	// if err == nil {
+	// 	uid, err := entityManager.Add(&square)
+	// 	if err == nil {
+	// 		lvl.addChild(uid)
+	// 	}
+	// } else {
+	// 	fmt.Println(err)
+	// }
+
+	// lvl.startPosition = newLevel.startPosition
+	// lvl.entityIDs = newLevel.entityIDs
+	// lvl.Reset()
+
+	return nil
+}
+
+func (lvl *level) Free() {
+	entityManager := ec.GetEntityManager()
+	for _, uid := range lvl.entityIDs {
+		entityManager.Remove(uid)
+	}
+	lvl.entityIDs = nil
+}
+
+func (lvl *level) Reset() {
 	fmt.Println("loading level")
 	ec.GetPlayerPtr().SetPosition(lvl.startPosition)
 	moveComponent, err := ec.GetComponent[*ec.CMovable](ec.CMP_MOVABLE, ec.GetPlayerPtr())
@@ -70,28 +114,129 @@ func (lvl *level) Load() {
 	}
 }
 
-func (lvl *level) Reset() {
+func (lvl *level) Reload() error {
+	lvl.Free()
+	newLevel, err := loadLevel(lvl.name)
+	if err != nil {
+		return err
+	}
+	lvl = &newLevel
+	return nil
+}
 
+func (lvl *level) SaveToFile() error {
+	type entitydata struct {
+		EntityName string
+		Position   mgl32.Vec3
+	}
+	savedata := struct {
+		Name          string
+		StartPosition mgl32.Vec3
+		EntityData    []entitydata
+	}{
+		Name:          lvl.name,
+		StartPosition: lvl.startPosition,
+		EntityData:    []entitydata{},
+	}
+
+	names := make(map[string]bool)
 	entityManager := ec.GetEntityManager()
 	for _, uid := range lvl.entityIDs {
-		entityManager.Remove(uid)
+		entity, err := entityManager.Get(uid)
+		if err != nil {
+			continue
+		}
+		if !names[entity.Name] {
+			names[entity.Name] = true
+			entity.SaveToFile()
+		}
+		savedata.EntityData = append(savedata.EntityData, entitydata{entity.Name, entity.GetPosition()})
 	}
-	lvl.entityIDs = nil
 
-	lvl.Load()
+	return sys.SaveStruct(getLevelPath(lvl.name), savedata)
+}
+
+func loadLevel(filename string) (level, error) {
+	type entitydata struct {
+		EntityName string
+		Position   mgl32.Vec3
+	}
+	savedata := struct {
+		Name          string
+		StartPosition mgl32.Vec3
+		EntityData    []entitydata
+	}{}
+	err := sys.LoadStruct(getLevelPath(filename), &savedata)
+	if err != nil {
+		return level{}, err
+	}
+
+	newLevel := level{
+		savedata.Name,
+		savedata.StartPosition,
+		[]uint64{},
+	}
+
+	entityMgr := ec.GetEntityManager()
+	entityCache := map[string]ec.Entity{}
+	for _, entityData := range savedata.EntityData {
+		entity, ok := entityCache[entityData.EntityName]
+		if !ok {
+			newEntity, err := ec.LoadEntity(entityData.EntityName)
+			if err != nil {
+				return level{}, err
+			}
+			entityCache[entityData.EntityName] = newEntity
+			entity = newEntity
+		}
+		newEntity, err := entity.Copy()
+		if err != nil {
+			return level{}, err
+		}
+		newEntity.SetPosition(entityData.Position)
+		uid, err := entityMgr.Add(&newEntity)
+		if err != nil {
+			return level{}, err
+		}
+		// e2.SetPosition(entityData.Position)
+		newLevel.addChild(uid)
+	}
+
+	// testing
+	// entities := entityMgr.GetEntitiesWithComponent(ec.CMP_ANY)
+	// for _, e := range entities {
+	// 	fmt.Printf("%p\n", e)
+	// 	fmt.Println(e.GetPosition(), "\n")
+	// }
+	return newLevel, nil
 }
 
 func CreateLevelControls() {
 
 	// reset level
 	sys.GetControlsManager().Add(sys.ButtonStateMachine{
-		glfw.Key0,
-		sys.BUTTONSTATE_OFF,
-		func(state sys.ButtonState) {
+		Key:   glfw.Key0,
+		State: sys.BUTTONSTATE_OFF,
+		Callback: func(state sys.ButtonState) {
 			GetCurrentLevel().Reset()
 		},
-		0.0,
-		0.0,
-		false,
+		StateTimeLimit:   0.0,
+		StateTimeElapsed: 0.0,
+		IsAsleep:         true,
 	})
+
+	sys.GetControlsManager().Add(sys.ButtonStateMachine{
+		Key:   glfw.Key9,
+		State: sys.BUTTONSTATE_OFF,
+		Callback: func(state sys.ButtonState) {
+			GetCurrentLevel().Reload()
+		},
+		StateTimeLimit:   0.0,
+		StateTimeElapsed: 0.0,
+		IsAsleep:         true,
+	})
+}
+
+func getLevelPath(filename string) string {
+	return fmt.Sprintf("%s/%s.yml", ASSET_DIR_LEVEL, filename)
 }

@@ -57,6 +57,12 @@ func (comp *CMovable) getType() ComponentType {
 
 func (comp *CMovable) onDelete() {}
 
+func (comp *CMovable) Copy() (Component, error) {
+	cHolder := comp.GetSaveData()
+	newComp, err := LoadComponentMovable(cHolder.YamlData)
+	return &newComp, err
+}
+
 func (comp *CMovable) GetSaveData() componentHolder {
 	followTargetName := ""
 	if comp.followTarget != nil {

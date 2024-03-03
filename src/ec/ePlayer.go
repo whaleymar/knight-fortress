@@ -160,7 +160,7 @@ func CreatePlayerControls() {
 		},
 		0.0,
 		0.0,
-		false,
+		true,
 	})
 
 	// move right
@@ -175,7 +175,7 @@ func CreatePlayerControls() {
 		},
 		0.0,
 		0.0,
-		false,
+		true,
 	})
 
 	// jump
@@ -196,7 +196,7 @@ func CreatePlayerControls() {
 		},
 		0.25, // max time
 		0.0,
-		false,
+		true,
 	})
 
 	// // reset position

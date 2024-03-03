@@ -72,3 +72,16 @@ func (components *ComponentManager) Clear() {
 	}
 	components.components = nil
 }
+
+func (components *ComponentManager) Copy() ([]Component, error) {
+	newComponentList := []Component{}
+	for _, comp := range components.components {
+		newComponent, err := comp.Copy()
+		if err != nil {
+			return nil, err
+		}
+		newComponentList = append(newComponentList, newComponent)
+	}
+	return newComponentList, nil
+
+}
